@@ -4,7 +4,7 @@
 \title{Percentage Cover
 %%  ~~function to do ... ~~
 }
-\description{Percent.cov() applies the reclass.cov() function using one shapefile with multiple zones. This tool also provides the ability to choose multiple rasters for use in raster.cov() according to a decision criteria. The final output is a large dataframe with zoneID's and percentage cover of each coverage type within each zone precent in the shapefile.
+\description{Percent.cov() applies the reclass.cov() function using one shapefile with multiple zones. This tool also provides the ability to choose multiple rasters for use in raster.cov() according to a decision criteria. The final output is a large dataframe with zoneID's and percentage cover of each coverage type within each zone present in the shapefile.
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
