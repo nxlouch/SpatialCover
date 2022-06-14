@@ -1,0 +1,636 @@
+#### Reprojecting climate grids from Adapt West ####
+# Date: 10-13-16
+#updated: 10-25-16
+# Author: Ian McCullough, immccull@gmail.com
+####################################################
+
+#-----------------------------------------------------------------#
+#CanESM2 Model rcp85 
+#### load R libraries ####
+# if error that package can't be found, use install.packages('package name')
+install.packages("ncdf4")
+library(ncdf4)
+library(raster)
+install.packages("digest")
+library(digest)
+install.packages("plotKML")
+library(plotKML)
+install.packages("ggplot2")
+library(ggplot2)
+
+#### set up procedures ####
+# set working directory
+setwd("E:/Cold_Amazon/data/Public/Climate/NetCDF/CanESM2_rcp85_2055_Bioclim_netCDF")
+
+# bring in shapefile of Canadian provinces, with correct projection (Canada Albers Equal Area Conic)
+provinces = shapefile("E:/Cold_Amazon/data/Public/Climate/NetCDF/HistoricalClimate_19802010/Canada_CAC.shp") # assuming it is in your working directory
+crs(provinces) #notice there are differences between this and crs(stack) below
+
+# list NetCDF files in your working directory
+list = list.files(pattern='.nc')
+
+#### Method 1: create and reproject a raster stack ####
+
+# "stack" rasters from NetCDF file list (stack is set of rasters)
+stack = stack(list)
+crs(stack) # view coordinate system reference
+
+# fix typo in coordinate system reference (extra neg sign)
+# from: http://spatialreference.org/ref/esri/north-america-lambert-conformal-conic/proj4/
+crs(stack) = " +proj=lcc +lat_1=49.0 +lat_2=77.0 +lat_0=0.0 +lon_0=-95.0 +x_0=0.0 +y_0=0.0 +ellps=WGS84
++units=m +no_defs"
+crs(stack) #verify fix
+
+# also can manually designate Canada Albers Equal Area in proj4 format
+# from: http://spatialreference.org/ref/esri/102001/proj4/
+CAN_Albers_Conic = CRS("+proj=aea +lat_1=50 +lat_2=70 +lat_0=40 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs")
+CAN_Albers_Conic #should be same as result of crs(provinces)
+
+# reproject the stack; warning: may be quite slow
+stack_reproj = projectRaster(from=stack, res=res(stack), crs=proj4string(provinces)) #projectRaster doesn't seem to like stacks; would have to use loop
+memory.limit(size = 4000)
+stack_reproj = reproject(stack, CRS=proj4string(provinces))
+
+# save stacked rasters as individual rasters (will save in your working directory)
+# may also be quite slow
+names= paste0(names(stack), "rcp85") 
+
+writeRaster(stack_reproj, filename = names, bylayer=T, format='GTiff',overwrite=T)
+
+#MRB_shapefile<-shapefile('G:/Project/Data/Public/Climate/NetCDF/MRB/MRB_withProvinces.shp')
+#stack_reproj_masked = mask(x=stack_reproj, mask=MRB_shapefile, inverse=FALSE)
+#names=paste0(names(stack_reproj_masked), "masked")
+#writeRaster(stack_reproj_masked, filename = names(stack_reproj_masked), bylayer=T, format='GTiff',overwrite=T)
+#-----------------------------------------------------------------------------#
+#CanESM2 rcp4.5
+setwd("G:/Project/Data/Public/Climate/NetCDF/CanESM2_rcp45_2055_Bioclim_netCDF")
+
+# bring in shapefile of Canadian provinces, with correct projection (Canada Albers Equal Area Conic)
+provinces = shapefile("G:/Project/Data/Public/Climate/NetCDF/HistoricalClimate_19802010/Canada_CAC.shp") # assuming it is in your working directory
+crs(provinces) #notice there are differences between this and crs(stack) below
+
+# list NetCDF files in your working directory
+list = list.files(pattern='.nc')
+
+#### Method 1: create and reproject a raster stack ####
+
+# "stack" rasters from NetCDF file list (stack is set of rasters)
+stack = stack(list)
+crs(stack) # view coordinate system reference
+
+# fix typo in coordinate system reference (extra neg sign)
+# from: http://spatialreference.org/ref/esri/north-america-lambert-conformal-conic/proj4/
+crs(stack) = " +proj=lcc +lat_1=49.0 +lat_2=77.0 +lat_0=0.0 +lon_0=-95.0 +x_0=0.0 +y_0=0.0 +ellps=WGS84
++units=m +no_defs"
+crs(stack) #verify fix
+
+# also can manually designate Canada Albers Equal Area in proj4 format
+# from: http://spatialreference.org/ref/esri/102001/proj4/
+#CAN_Albers_Conic = CRS("+proj=aea +lat_1=50 +lat_2=70 +lat_0=40 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs")
+#CAN_Albers_Conic #should be same as result of crs(provinces)
+
+# reproject the stack; warning: may be quite slow
+#stack_reproj = projectRaster(from=stack, res=res(stack), crs=proj4string(provinces)) #projectRaster doesn't seem to like stacks; would have to use loop
+stack_reproj = reproject(stack, CRS=proj4string(provinces))
+
+# save stacked rasters as individual rasters (will save in your working directory)
+# may also be quite slow
+names= paste0(names(stack), "rcp45") 
+
+writeRaster(stack_reproj, filename =names, bylayer=T, format='GTiff',overwrite=T)
+
+#MRB_shapefile<-shapefile('G:/Project/Data/Public/Climate/NetCDF/MRB/MRB_withProvinces.shp')
+#stack_reproj_masked = mask(x=stack_reproj, mask=MRB_shapefile, inverse=FALSE)
+#names=paste0(names(stack_reproj_masked), "masked")
+#writeRaster(stack_reproj_masked, filename = names(stack_reproj_masked), bylayer=T, format='GTiff',overwrite=T)
+#--------------------------------------------------------------------------------------------------------------#
+#CCSM4_RCP85
+setwd("G:/Project/Data/Public/Climate/NetCDF/CCSM4_rcp85_2055_Bioclim_netCDF")
+
+# bring in shapefile of Canadian provinces, with correct projection (Canada Albers Equal Area Conic)
+provinces = shapefile("G:/Project/Data/Public/Climate/NetCDF/HistoricalClimate_19802010/Canada_CAC.shp") # assuming it is in your working directory
+crs(provinces) #notice there are differences between this and crs(stack) below
+
+# list NetCDF files in your working directory
+list = list.files(pattern='.nc')
+
+#### Method 1: create and reproject a raster stack ####
+
+# "stack" rasters from NetCDF file list (stack is set of rasters)
+stack = stack(list)
+crs(stack) # view coordinate system reference
+
+# fix typo in coordinate system reference (extra neg sign)
+# from: http://spatialreference.org/ref/esri/north-america-lambert-conformal-conic/proj4/
+crs(stack) = " +proj=lcc +lat_1=49.0 +lat_2=77.0 +lat_0=0.0 +lon_0=-95.0 +x_0=0.0 +y_0=0.0 +ellps=WGS84
++units=m +no_defs"
+crs(stack) #verify fix
+
+# also can manually designate Canada Albers Equal Area in proj4 format
+# from: http://spatialreference.org/ref/esri/102001/proj4/
+#CAN_Albers_Conic = CRS("+proj=aea +lat_1=50 +lat_2=70 +lat_0=40 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs")
+#CAN_Albers_Conic #should be same as result of crs(provinces)
+
+# reproject the stack; warning: may be quite slow
+#stack_reproj = projectRaster(from=stack, res=res(stack), crs=proj4string(provinces)) #projectRaster doesn't seem to like stacks; would have to use loop
+stack_reproj = reproject(stack, CRS=proj4string(provinces))
+
+# save stacked rasters as individual rasters (will save in your working directory)
+# may also be quite slow
+names= paste0(names(stack), "CCSM4_rcp85") 
+
+writeRaster(stack_reproj, filename =names, bylayer=T, format='GTiff',overwrite=T)
+
+#MRB_shapefile<-shapefile('G:/Project/Data/Public/Climate/NetCDF/MRB/MRB_withProvinces.shp')
+#stack_reproj_masked = mask(x=stack_reproj, mask=MRB_shapefile, inverse=FALSE)
+#names=paste0(names(stack_reproj_masked), "masked")
+#writeRaster(stack_reproj_masked, filename = names(stack_reproj_masked), bylayer=T, format='GTiff',overwrite=T)
+#----------------------------------------------------------------------------------------------------------------#
+#CCSM4_rcp45
+setwd("G:/Project/Data/Public/Climate/NetCDF/CCSM4_rcp45_2055_Bioclim_netCDF")
+
+# bring in shapefile of Canadian provinces, with correct projection (Canada Albers Equal Area Conic)
+provinces = shapefile("G:/Project/Data/Public/Climate/NetCDF/HistoricalClimate_19802010/Canada_CAC.shp") # assuming it is in your working directory
+crs(provinces) #notice there are differences between this and crs(stack) below
+
+# list NetCDF files in your working directory
+list = list.files(pattern='.nc')
+
+#### Method 1: create and reproject a raster stack ####
+
+# "stack" rasters from NetCDF file list (stack is set of rasters)
+stack = stack(list)
+crs(stack) # view coordinate system reference
+
+# fix typo in coordinate system reference (extra neg sign)
+# from: http://spatialreference.org/ref/esri/north-america-lambert-conformal-conic/proj4/
+crs(stack) = " +proj=lcc +lat_1=49.0 +lat_2=77.0 +lat_0=0.0 +lon_0=-95.0 +x_0=0.0 +y_0=0.0 +ellps=WGS84
++units=m +no_defs"
+crs(stack) #verify fix
+
+# also can manually designate Canada Albers Equal Area in proj4 format
+# from: http://spatialreference.org/ref/esri/102001/proj4/
+#CAN_Albers_Conic = CRS("+proj=aea +lat_1=50 +lat_2=70 +lat_0=40 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs")
+#CAN_Albers_Conic #should be same as result of crs(provinces)
+
+# reproject the stack; warning: may be quite slow
+#stack_reproj = projectRaster(from=stack, res=res(stack), crs=proj4string(provinces)) #projectRaster doesn't seem to like stacks; would have to use loop
+stack_reproj = reproject(stack, CRS=proj4string(provinces))
+
+# save stacked rasters as individual rasters (will save in your working directory)
+# may also be quite slow
+names= paste0(names(stack), "rcp45") 
+
+writeRaster(stack_reproj, filename = names, bylayer=T, format='GTiff',overwrite=T)
+#---------------------------------------------------------------------------------------------------------#
+#CNRM-CM5 rcp45 
+setwd("G:/Project/Data/Public/Climate/NetCDF/CNRM-CM5_rcp45_2055_Bioclim_netCDF/bFFP")
+
+# bring in shapefile of Canadian provinces, with correct projection (Canada Albers Equal Area Conic)
+provinces = shapefile("G:/Project/Data/Public/Climate/NetCDF/HistoricalClimate_19802010/Canada_CAC.shp") # assuming it is in your working directory
+crs(provinces) #notice there are differences between this and crs(stack) below
+
+# list NetCDF files in your working directory
+list = list.files(pattern='.nc')
+
+#### Method 1: create and reproject a raster stack ####
+
+# "stack" rasters from NetCDF file list (stack is set of rasters)
+stack = stack(list)
+crs(stack) # view coordinate system reference
+
+# fix typo in coordinate system reference (extra neg sign)
+# from: http://spatialreference.org/ref/esri/north-america-lambert-conformal-conic/proj4/
+crs(stack) = " +proj=lcc +lat_1=49.0 +lat_2=77.0 +lat_0=0.0 +lon_0=-95.0 +x_0=0.0 +y_0=0.0 +ellps=WGS84
++units=m +no_defs"
+crs(stack) #verify fix
+
+# also can manually designate Canada Albers Equal Area in proj4 format
+# from: http://spatialreference.org/ref/esri/102001/proj4/
+#CAN_Albers_Conic = CRS("+proj=aea +lat_1=50 +lat_2=70 +lat_0=40 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs")
+#CAN_Albers_Conic #should be same as result of crs(provinces)
+
+# reproject the stack; warning: may be quite slow
+#stack_reproj = projectRaster(from=stack, res=res(stack), crs=proj4string(provinces)) #projectRaster doesn't seem to like stacks; would have to use loop
+stack_reproj = reproject(stack, CRS=proj4string(provinces))
+
+# save stacked rasters as individual rasters (will save in your working directory)
+# may also be quite slow
+names= paste0(names(stack), "rcp45") 
+
+writeRaster(stack_reproj, filename = names, bylayer=T, format='GTiff',overwrite=T)
+#---------------------------------------------------------------------------------------------------------#
+#CNRM-CM5 rcp85
+setwd("G:/Project/Data/Public/Climate/NetCDF/CNRM-CM5_rcp85_2055_Bioclim_netCDF/bFFP")
+
+# bring in shapefile of Canadian provinces, with correct projection (Canada Albers Equal Area Conic)
+provinces = shapefile("G:/Project/Data/Public/Climate/NetCDF/HistoricalClimate_19802010/Canada_CAC.shp") # assuming it is in your working directory
+crs(provinces) #notice there are differences between this and crs(stack) below
+
+# list NetCDF files in your working directory
+list = list.files(pattern='.nc')
+
+#### Method 1: create and reproject a raster stack ####
+
+# "stack" rasters from NetCDF file list (stack is set of rasters)
+stack = stack(list)
+crs(stack) # view coordinate system reference
+
+# fix typo in coordinate system reference (extra neg sign)
+# from: http://spatialreference.org/ref/esri/north-america-lambert-conformal-conic/proj4/
+crs(stack) = " +proj=lcc +lat_1=49.0 +lat_2=77.0 +lat_0=0.0 +lon_0=-95.0 +x_0=0.0 +y_0=0.0 +ellps=WGS84
++units=m +no_defs"
+crs(stack) #verify fix
+
+# also can manually designate Canada Albers Equal Area in proj4 format
+# from: http://spatialreference.org/ref/esri/102001/proj4/
+#CAN_Albers_Conic = CRS("+proj=aea +lat_1=50 +lat_2=70 +lat_0=40 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs")
+#CAN_Albers_Conic #should be same as result of crs(provinces)
+
+# reproject the stack; warning: may be quite slow
+#stack_reproj = projectRaster(from=stack, res=res(stack), crs=proj4string(provinces)) #projectRaster doesn't seem to like stacks; would have to use loop
+stack_reproj = reproject(stack, CRS=proj4string(provinces))
+
+# save stacked rasters as individual rasters (will save in your working directory)
+# may also be quite slow
+names= paste0(names(stack), "CNMRM_rcp85") 
+
+writeRaster(stack_reproj, filename = names, bylayer=T, format='GTiff',overwrite=T)
+#---------------------------------------------------------------------------------------------#
+
+
+
+
+#GFDL-CM3 rcp85
+setwd("G:/Project/Data/Public/Climate/NetCDF/GFDL-CM3_rcp85_2055_Bioclim_netCDF/bFFP")
+
+# bring in shapefile of Canadian provinces, with correct projection (Canada Albers Equal Area Conic)
+provinces = shapefile("G:/Project/Data/Public/Climate/NetCDF/HistoricalClimate_19802010/Canada_CAC.shp") # assuming it is in your working directory
+crs(provinces) #notice there are differences between this and crs(stack) below
+
+# list NetCDF files in your working directory
+list = list.files(pattern='.nc')
+
+#### Method 1: create and reproject a raster stack ####
+
+# "stack" rasters from NetCDF file list (stack is set of rasters)
+stack = stack(list)
+crs(stack) # view coordinate system reference
+
+# fix typo in coordinate system reference (extra neg sign)
+# from: http://spatialreference.org/ref/esri/north-america-lambert-conformal-conic/proj4/
+crs(stack) = " +proj=lcc +lat_1=49.0 +lat_2=77.0 +lat_0=0.0 +lon_0=-95.0 +x_0=0.0 +y_0=0.0 +ellps=WGS84
++units=m +no_defs"
+crs(stack) #verify fix
+
+# also can manually designate Canada Albers Equal Area in proj4 format
+# from: http://spatialreference.org/ref/esri/102001/proj4/
+#CAN_Albers_Conic = CRS("+proj=aea +lat_1=50 +lat_2=70 +lat_0=40 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs")
+#CAN_Albers_Conic #should be same as result of crs(provinces)
+
+# reproject the stack; warning: may be quite slow
+#stack_reproj = projectRaster(from=stack, res=res(stack), crs=proj4string(provinces)) #projectRaster doesn't seem to like stacks; would have to use loop
+stack_reproj = reproject(stack, CRS=proj4string(provinces))
+
+# save stacked rasters as individual rasters (will save in your working directory)
+# may also be quite slow
+names= paste0(names(stack), "rcp85") 
+
+writeRaster(stack_reproj, filename = names, bylayer=T, format='GTiff',overwrite=T)
+#--------------------------------------------------------------------------------------------#
+#GFDL-CM3_45
+setwd("G:/Project/Data/Public/Climate/NetCDF/GFDL-CM3_rcp45_2055_Bioclim_netCDF/bFFP")
+
+# bring in shapefile of Canadian provinces, with correct projection (Canada Albers Equal Area Conic)
+provinces = shapefile("G:/Project/Data/Public/Climate/NetCDF/HistoricalClimate_19802010/Canada_CAC.shp") # assuming it is in your working directory
+crs(provinces) #notice there are differences between this and crs(stack) below
+
+# list NetCDF files in your working directory
+list = list.files(pattern='.nc')
+
+#### Method 1: create and reproject a raster stack ####
+
+# "stack" rasters from NetCDF file list (stack is set of rasters)
+stack = stack(list)
+crs(stack) # view coordinate system reference
+
+# fix typo in coordinate system reference (extra neg sign)
+# from: http://spatialreference.org/ref/esri/north-america-lambert-conformal-conic/proj4/
+crs(stack) = " +proj=lcc +lat_1=49.0 +lat_2=77.0 +lat_0=0.0 +lon_0=-95.0 +x_0=0.0 +y_0=0.0 +ellps=WGS84
++units=m +no_defs"
+crs(stack) #verify fix
+
+# also can manually designate Canada Albers Equal Area in proj4 format
+# from: http://spatialreference.org/ref/esri/102001/proj4/
+#CAN_Albers_Conic = CRS("+proj=aea +lat_1=50 +lat_2=70 +lat_0=40 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs")
+#CAN_Albers_Conic #should be same as result of crs(provinces)
+
+# reproject the stack; warning: may be quite slow
+#stack_reproj = projectRaster(from=stack, res=res(stack), crs=proj4string(provinces)) #projectRaster doesn't seem to like stacks; would have to use loop
+stack_reproj = reproject(stack, CRS=proj4string(provinces))
+
+# save stacked rasters as individual rasters (will save in your working directory)
+# may also be quite slow
+names= paste0(names(stack), "rcp45") 
+
+writeRaster(stack_reproj, filename = names, bylayer=T, format='GTiff',overwrite=T)
+#-------------------------------------------------------------------#
+#HadGEM rcp45
+
+setwd("G:/Project/Data/Public/Climate/NetCDF/HadGEM2-ES_rcp45_2055_Bioclim_netCDF/bFFP")
+
+# bring in shapefile of Canadian provinces, with correct projection (Canada Albers Equal Area Conic)
+provinces = shapefile("G:/Project/Data/Public/Climate/NetCDF/HistoricalClimate_19802010/Canada_CAC.shp") # assuming it is in your working directory
+crs(provinces) #notice there are differences between this and crs(stack) below
+
+# list NetCDF files in your working directory
+list = list.files(pattern='.nc')
+
+#### Method 1: create and reproject a raster stack ####
+
+# "stack" rasters from NetCDF file list (stack is set of rasters)
+stack = stack(list)
+crs(stack) # view coordinate system reference
+
+# fix typo in coordinate system reference (extra neg sign)
+# from: http://spatialreference.org/ref/esri/north-america-lambert-conformal-conic/proj4/
+crs(stack) = " +proj=lcc +lat_1=49.0 +lat_2=77.0 +lat_0=0.0 +lon_0=-95.0 +x_0=0.0 +y_0=0.0 +ellps=WGS84
++units=m +no_defs"
+crs(stack) #verify fix
+
+# also can manually designate Canada Albers Equal Area in proj4 format
+# from: http://spatialreference.org/ref/esri/102001/proj4/
+#CAN_Albers_Conic = CRS("+proj=aea +lat_1=50 +lat_2=70 +lat_0=40 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs")
+#CAN_Albers_Conic #should be same as result of crs(provinces)
+
+# reproject the stack; warning: may be quite slow
+#stack_reproj = projectRaster(from=stack, res=res(stack), crs=proj4string(provinces)) #projectRaster doesn't seem to like stacks; would have to use loop
+stack_reproj = reproject(stack, CRS=proj4string(provinces))
+
+# save stacked rasters as individual rasters (will save in your working directory)
+# may also be quite slow
+names= paste0(names(stack), "rcp45") 
+
+writeRaster(stack_reproj, filename = names, bylayer=T, format='GTiff',overwrite=T)
+#----------------------------------------------------------------------------------------#
+#HadGEM2
+setwd("G:/Project/Data/Public/Climate/NetCDF/HadGEM2-ES_rcp85_2055_Bioclim_netCDF/bFFP")
+
+# bring in shapefile of Canadian provinces, with correct projection (Canada Albers Equal Area Conic)
+provinces = shapefile("G:/Project/Data/Public/Climate/NetCDF/HistoricalClimate_19802010/Canada_CAC.shp") # assuming it is in your working directory
+crs(provinces) #notice there are differences between this and crs(stack) below
+
+# list NetCDF files in your working directory
+list = list.files(pattern='.nc')
+
+#### Method 1: create and reproject a raster stack ####
+
+# "stack" rasters from NetCDF file list (stack is set of rasters)
+stack = stack(list)
+crs(stack) # view coordinate system reference
+
+# fix typo in coordinate system reference (extra neg sign)
+# from: http://spatialreference.org/ref/esri/north-america-lambert-conformal-conic/proj4/
+crs(stack) = " +proj=lcc +lat_1=49.0 +lat_2=77.0 +lat_0=0.0 +lon_0=-95.0 +x_0=0.0 +y_0=0.0 +ellps=WGS84
++units=m +no_defs"
+crs(stack) #verify fix
+
+# also can manually designate Canada Albers Equal Area in proj4 format
+# from: http://spatialreference.org/ref/esri/102001/proj4/
+#CAN_Albers_Conic = CRS("+proj=aea +lat_1=50 +lat_2=70 +lat_0=40 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs")
+#CAN_Albers_Conic #should be same as result of crs(provinces)
+
+# reproject the stack; warning: may be quite slow
+#stack_reproj = projectRaster(from=stack, res=res(stack), crs=proj4string(provinces)) #projectRaster doesn't seem to like stacks; would have to use loop
+stack_reproj = reproject(stack, CRS=proj4string(provinces))
+
+# save stacked rasters as individual rasters (will save in your working directory)
+# may also be quite slow
+names= paste0(names(stack), "rcp85") 
+
+writeRaster(stack_reproj, filename = names, bylayer=T, format='GTiff',overwrite=T)
+#--------------------------------------------------------------------------------------------#
+#INM-CM4 rcp45
+setwd("G:/Project/Data/Public/Climate/NetCDF/INM-CM4_rcp45_2055_Bioclim_netCDF/bFFP")
+
+# bring in shapefile of Canadian provinces, with correct projection (Canada Albers Equal Area Conic)
+provinces = shapefile("G:/Project/Data/Public/Climate/NetCDF/HistoricalClimate_19802010/Canada_CAC.shp") # assuming it is in your working directory
+crs(provinces) #notice there are differences between this and crs(stack) below
+
+# list NetCDF files in your working directory
+list = list.files(pattern='.nc')
+
+#### Method 1: create and reproject a raster stack ####
+
+# "stack" rasters from NetCDF file list (stack is set of rasters)
+stack = stack(list)
+crs(stack) # view coordinate system reference
+
+# fix typo in coordinate system reference (extra neg sign)
+# from: http://spatialreference.org/ref/esri/north-america-lambert-conformal-conic/proj4/
+crs(stack) = " +proj=lcc +lat_1=49.0 +lat_2=77.0 +lat_0=0.0 +lon_0=-95.0 +x_0=0.0 +y_0=0.0 +ellps=WGS84
++units=m +no_defs"
+crs(stack) #verify fix
+
+# also can manually designate Canada Albers Equal Area in proj4 format
+# from: http://spatialreference.org/ref/esri/102001/proj4/
+#CAN_Albers_Conic = CRS("+proj=aea +lat_1=50 +lat_2=70 +lat_0=40 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs")
+#CAN_Albers_Conic #should be same as result of crs(provinces)
+
+# reproject the stack; warning: may be quite slow
+#stack_reproj = projectRaster(from=stack, res=res(stack), crs=proj4string(provinces)) #projectRaster doesn't seem to like stacks; would have to use loop
+stack_reproj = reproject(stack, CRS=proj4string(provinces))
+
+# save stacked rasters as individual rasters (will save in your working directory)
+# may also be quite slow
+names= paste0(names(stack), "rcp45") 
+
+writeRaster(stack_reproj, filename = names, bylayer=T, format='GTiff',overwrite=T)
+#--------------------------------------------------------------------------------------------#
+#INM-CM4 rcp85
+setwd("G:/Project/Data/Public/Climate/NetCDF/INM-CM4_rcp85_2055_Bioclim_netCDF/bFFP")
+
+# bring in shapefile of Canadian provinces, with correct projection (Canada Albers Equal Area Conic)
+provinces = shapefile("G:/Project/Data/Public/Climate/NetCDF/HistoricalClimate_19802010/Canada_CAC.shp") # assuming it is in your working directory
+crs(provinces) #notice there are differences between this and crs(stack) below
+
+# list NetCDF files in your working directory
+list = list.files(pattern='.nc')
+
+#### Method 1: create and reproject a raster stack ####
+
+# "stack" rasters from NetCDF file list (stack is set of rasters)
+stack = stack(list)
+crs(stack) # view coordinate system reference
+
+# fix typo in coordinate system reference (extra neg sign)
+# from: http://spatialreference.org/ref/esri/north-america-lambert-conformal-conic/proj4/
+crs(stack) = " +proj=lcc +lat_1=49.0 +lat_2=77.0 +lat_0=0.0 +lon_0=-95.0 +x_0=0.0 +y_0=0.0 +ellps=WGS84
++units=m +no_defs"
+crs(stack) #verify fix
+
+# also can manually designate Canada Albers Equal Area in proj4 format
+# from: http://spatialreference.org/ref/esri/102001/proj4/
+#CAN_Albers_Conic = CRS("+proj=aea +lat_1=50 +lat_2=70 +lat_0=40 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs")
+#CAN_Albers_Conic #should be same as result of crs(provinces)
+
+# reproject the stack; warning: may be quite slow
+#stack_reproj = projectRaster(from=stack, res=res(stack), crs=proj4string(provinces)) #projectRaster doesn't seem to like stacks; would have to use loop
+stack_reproj = reproject(stack, CRS=proj4string(provinces))
+
+# save stacked rasters as individual rasters (will save in your working directory)
+# may also be quite slow
+names= paste0(names(stack), "rcp85") 
+
+writeRaster(stack_reproj, filename = names, bylayer=T, format='GTiff',overwrite=T)
+#--------------------------------------------------------------------------------------#
+#IPSL-CM5A rcp85
+
+setwd("G:/Project/Data/Public/Climate/NetCDF/IPSL-CM5A-MR_rcp85_2055_Bioclim_netCDF/bFFP")
+
+# bring in shapefile of Canadian provinces, with correct projection (Canada Albers Equal Area Conic)
+provinces = shapefile("G:/Project/Data/Public/Climate/NetCDF/HistoricalClimate_19802010/Canada_CAC.shp") # assuming it is in your working directory
+crs(provinces) #notice there are differences between this and crs(stack) below
+
+# list NetCDF files in your working directory
+list = list.files(pattern='.nc')
+
+#### Method 1: create and reproject a raster stack ####
+
+# "stack" rasters from NetCDF file list (stack is set of rasters)
+stack = stack(list)
+crs(stack) # view coordinate system reference
+
+# fix typo in coordinate system reference (extra neg sign)
+# from: http://spatialreference.org/ref/esri/north-america-lambert-conformal-conic/proj4/
+crs(stack) = " +proj=lcc +lat_1=49.0 +lat_2=77.0 +lat_0=0.0 +lon_0=-95.0 +x_0=0.0 +y_0=0.0 +ellps=WGS84
++units=m +no_defs"
+crs(stack) #verify fix
+
+# also can manually designate Canada Albers Equal Area in proj4 format
+# from: http://spatialreference.org/ref/esri/102001/proj4/
+#CAN_Albers_Conic = CRS("+proj=aea +lat_1=50 +lat_2=70 +lat_0=40 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs")
+#CAN_Albers_Conic #should be same as result of crs(provinces)
+
+# reproject the stack; warning: may be quite slow
+#stack_reproj = projectRaster(from=stack, res=res(stack), crs=proj4string(provinces)) #projectRaster doesn't seem to like stacks; would have to use loop
+stack_reproj = reproject(stack, CRS=proj4string(provinces))
+
+# save stacked rasters as individual rasters (will save in your working directory)
+# may also be quite slow
+names= paste0(names(stack), "rcp85") 
+
+writeRaster(stack_reproj, filename = names, bylayer=T, format='GTiff',overwrite=T)
+#------------------------------------------------------------------------------------------#
+#IPSL-CM5A-MR 45
+setwd("G:/Project/Data/Public/Climate/NetCDF/IPSL-CM5A-MR_rcp45_2055_Bioclim_netCDF/bFFP")
+
+# bring in shapefile of Canadian provinces, with correct projection (Canada Albers Equal Area Conic)
+provinces = shapefile("G:/Project/Data/Public/Climate/NetCDF/HistoricalClimate_19802010/Canada_CAC.shp") # assuming it is in your working directory
+crs(provinces) #notice there are differences between this and crs(stack) below
+
+# list NetCDF files in your working directory
+list = list.files(pattern='.nc')
+
+#### Method 1: create and reproject a raster stack ####
+
+# "stack" rasters from NetCDF file list (stack is set of rasters)
+stack = stack(list)
+crs(stack) # view coordinate system reference
+
+# fix typo in coordinate system reference (extra neg sign)
+# from: http://spatialreference.org/ref/esri/north-america-lambert-conformal-conic/proj4/
+crs(stack) = " +proj=lcc +lat_1=49.0 +lat_2=77.0 +lat_0=0.0 +lon_0=-95.0 +x_0=0.0 +y_0=0.0 +ellps=WGS84
++units=m +no_defs"
+crs(stack) #verify fix
+
+# also can manually designate Canada Albers Equal Area in proj4 format
+# from: http://spatialreference.org/ref/esri/102001/proj4/
+#CAN_Albers_Conic = CRS("+proj=aea +lat_1=50 +lat_2=70 +lat_0=40 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs")
+#CAN_Albers_Conic #should be same as result of crs(provinces)
+
+# reproject the stack; warning: may be quite slow
+#stack_reproj = projectRaster(from=stack, res=res(stack), crs=proj4string(provinces)) #projectRaster doesn't seem to like stacks; would have to use loop
+stack_reproj = reproject(stack, CRS=proj4string(provinces))
+
+# save stacked rasters as individual rasters (will save in your working directory)
+# may also be quite slow
+names= paste0(names(stack), "rcp45") 
+
+writeRaster(stack_reproj, filename = names, bylayer=T, format='GTiff',overwrite=T)
+#--------------------------------------------------------------------------------#
+#MPI-ESM-LR rcp85
+
+
+setwd("G:/Project/Data/Public/Climate/NetCDF/MPI-ESM-LR_rcp85_2055_Bioclim_netCDF/bFFP")
+
+# bring in shapefile of Canadian provinces, with correct projection (Canada Albers Equal Area Conic)
+provinces = shapefile("G:/Project/Data/Public/Climate/NetCDF/HistoricalClimate_19802010/Canada_CAC.shp") # assuming it is in your working directory
+crs(provinces) #notice there are differences between this and crs(stack) below
+
+# list NetCDF files in your working directory
+list = list.files(pattern='.nc')
+
+#### Method 1: create and reproject a raster stack ####
+
+# "stack" rasters from NetCDF file list (stack is set of rasters)
+stack = stack(list)
+crs(stack) # view coordinate system reference
+
+# fix typo in coordinate system reference (extra neg sign)
+# from: http://spatialreference.org/ref/esri/north-america-lambert-conformal-conic/proj4/
+crs(stack) = " +proj=lcc +lat_1=49.0 +lat_2=77.0 +lat_0=0.0 +lon_0=-95.0 +x_0=0.0 +y_0=0.0 +ellps=WGS84
++units=m +no_defs"
+crs(stack) #verify fix
+
+# also can manually designate Canada Albers Equal Area in proj4 format
+# from: http://spatialreference.org/ref/esri/102001/proj4/
+#CAN_Albers_Conic = CRS("+proj=aea +lat_1=50 +lat_2=70 +lat_0=40 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs")
+#CAN_Albers_Conic #should be same as result of crs(provinces)
+
+# reproject the stack; warning: may be quite slow
+#stack_reproj = projectRaster(from=stack, res=res(stack), crs=proj4string(provinces)) #projectRaster doesn't seem to like stacks; would have to use loop
+stack_reproj = reproject(stack, CRS=proj4string(provinces))
+
+# save stacked rasters as individual rasters (will save in your working directory)
+# may also be quite slow
+names= paste0(names(stack), "rcp85") 
+
+writeRaster(stack_reproj, filename = names, bylayer=T, format='GTiff',overwrite=T)
+#----------------------------------------------------------------------------------------------#
+#MPI-ESM-LR rcp45
+setwd("G:/Project/Data/Public/Climate/NetCDF/MPI-ESM-LR_rcp45_2055_Bioclim_netCDF/bFFP")
+
+# bring in shapefile of Canadian provinces, with correct projection (Canada Albers Equal Area Conic)
+provinces = shapefile("G:/Project/Data/Public/Climate/NetCDF/HistoricalClimate_19802010/Canada_CAC.shp") # assuming it is in your working directory
+crs(provinces) #notice there are differences between this and crs(stack) below
+
+# list NetCDF files in your working directory
+list = list.files(pattern='.nc')
+
+#### Method 1: create and reproject a raster stack ####
+
+# "stack" rasters from NetCDF file list (stack is set of rasters)
+stack = stack(list)
+crs(stack) # view coordinate system reference
+
+# fix typo in coordinate system reference (extra neg sign)
+# from: http://spatialreference.org/ref/esri/north-america-lambert-conformal-conic/proj4/
+crs(stack) = " +proj=lcc +lat_1=49.0 +lat_2=77.0 +lat_0=0.0 +lon_0=-95.0 +x_0=0.0 +y_0=0.0 +ellps=WGS84
++units=m +no_defs"
+crs(stack) #verify fix
+
+# also can manually designate Canada Albers Equal Area in proj4 format
+# from: http://spatialreference.org/ref/esri/102001/proj4/
+#CAN_Albers_Conic = CRS("+proj=aea +lat_1=50 +lat_2=70 +lat_0=40 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs")
+#CAN_Albers_Conic #should be same as result of crs(provinces)
+
+# reproject the stack; warning: may be quite slow
+#stack_reproj = projectRaster(from=stack, res=res(stack), crs=proj4string(provinces)) #projectRaster doesn't seem to like stacks; would have to use loop
+stack_reproj = reproject(stack, CRS=proj4string(provinces))
+
+# save stacked rasters as individual rasters (will save in your working directory)
+# may also be quite slow
+names= paste0(names(stack), "rcp45") 
+
+writeRaster(stack_reproj, filename = names, bylayer=T, format='GTiff',overwrite=T)

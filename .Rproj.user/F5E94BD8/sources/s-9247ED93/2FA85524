@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1531153156151.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "2FA85524",
+    "lastKnownWriteTime" : 1531093123,
+    "last_content_update" : 1531093123,
+    "path" : "~/SpatialCover/man/WiscLandcover06_documentation.Rd",
+    "project_path" : "man/WiscLandcover06_documentation.Rd",
+    "properties" : {
+        "cursorPosition" : "1,20",
+        "scrollLine" : "0",
+        "tempName" : "Untitled3"
+    },
+    "relative_order" : 13,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_doc"
+}

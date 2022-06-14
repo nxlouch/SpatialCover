@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1531095366986.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "10D9E21E",
+    "lastKnownWriteTime" : 1531082437,
+    "last_content_update" : 1531082437,
+    "path" : "~/SpatialCover/R/reclass_cov_func.R",
+    "project_path" : "R/reclass_cov_func.R",
+    "properties" : {
+        "cursorPosition" : "70,38",
+        "scrollLine" : "0"
+    },
+    "relative_order" : 14,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

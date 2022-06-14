@@ -1,0 +1,147 @@
+#This reads in the bridge which you have to do first
+library(arcgisbinding)
+arc.check_product()
+
+#Read in the necessary packages
+
+#Packages for Vector data
+install.packages("sp")
+library(sp)
+
+
+#Packages for Raster data
+install.packages("raster")
+library(raster)
+
+#Spatial Cover package
+install.packages("SpatialCover")
+library(SpatialCover)
+
+#Create the condition df
+rasterfiles <- c("lcreclass92", "lcreclass01", "lcreclass06", "lcreclass11")
+from <- c(1979, 1998, 2006, 2011)
+to <- c(1997, 2005, 2010, 2012)
+ex_conditdf <- data.frame(rasterfiles, from, to)
+
+#Wolf locs
+wolflocs100m <- arc.open("C:/Users/Naomi Louchouarn/OneDrive - UW-Madison/2018_effort/GISIntermediates/WolfLocs/Buffers/WolfLocs_100mBuff.shp")
+wolflocs100m <- arc.select(object = wolflocs100m)
+wolflocs100m <- arc.data2sp(wolflocs100m)
+colnames(wolflocs100m@data)
+wolflocs100m <- subset(wolflocs100m, RASTERVA_1 != -9999 &  RASTERVA_1 != 0)
+wolflocs100m <- wolflocs100m[, c(3, 4, 7, 8, 13)]
+wolflocs100m <- wolflocs100m[order(wolflocs100m$ID),]
+wolflocs100m@data$ID_1 <- seq(1, 794, 1)
+wolflocs100mdf <- Percent.cov(vectorlayer = wolflocs100m, zoneID = "ID_1", AdditCol = c(2,3), rasterwd = "C:/Users/Naomi Louchouarn/Desktop/2018_effort/GISIntermediates/Landcover/LCDataforR", conditdf = ex_conditdf, conditvalue = wolflocs100m$Year)
+wolflocs100mdf <- apply(wolflocs100mdf,2,as.character)
+write.csv(wolflocs100mdf, "C:/Users/Naomi Louchouarn/Desktop/2018_effort/GISIntermediates/WolfLocs/WolfLocs_Buff_100m_percentcover.csv")
+
+wolflocs275m <- arc.open("C:/Users/Naomi Louchouarn/OneDrive - UW-Madison/2018_effort/GISIntermediates/WolfLocs/Buffers/WolfLocs_275mBuff.shp")
+wolflocs275m <- arc.select(object = wolflocs275m)
+wolflocs275m <- arc.data2sp(wolflocs275m)
+wolflocs275m <- subset(wolflocs275m, RASTERVA_1 != -9999 &  RASTERVA_1 != 0)
+wolflocs275m <- wolflocs275m[, c(3, 4, 7, 8, 13)]
+wolflocs275m <- wolflocs275m[order(wolflocs275m$ID),]
+wolflocs275m@data$ID_1 <- seq(1, 794, 1)
+wolflocs275mdf <- Percent.cov(vectorlayer = wolflocs275m, zoneID = "ID_1", AdditCol = c(2,3), rasterwd = "C:/Users/Naomi Louchouarn/Desktop/2018_effort/GISIntermediates/Landcover/LCDataforR", conditdf = ex_conditdf, conditvalue = wolflocs275m$Year)
+wolflocs275mdf <- apply(wolflocs275mdf,2,as.character)
+write.csv(wolflocs275mdf, "C:/Users/Naomi Louchouarn/Desktop/2018_effort/GISIntermediates/WolfLocs/WolfLocs_Buff_275m_percentcover.csv")
+
+wolflocs1km <- arc.open("C:/Users/Naomi Louchouarn/OneDrive - UW-Madison/2018_effort/GISIntermediates/WolfLocs/Buffers/WolfLocs_1km.shp")
+wolflocs1km <- arc.select(object = wolflocs1km)
+wolflocs1km <- arc.data2sp(wolflocs1km)
+wolflocs1km <- subset(wolflocs1km, RASTERVA_1 != -9999 &  RASTERVA_1 != 0)
+wolflocs1km <- wolflocs1km[, c(3, 4, 7, 8, 13)]
+wolflocs1km <- wolflocs1km[order(wolflocs1km$ID),]
+wolflocs1km@data$ID_1 <- seq(1, 794, 1)
+wolflocs1kmdf <- Percent.cov(vectorlayer = wolflocs1km, zoneID = "ID_1", AdditCol = c(2,3), rasterwd = "C:/Users/Naomi Louchouarn/Desktop/2018_effort/GISIntermediates/Landcover/LCDataforR", conditdf = ex_conditdf, conditvalue = wolflocs1km$Year)
+wolflocs1kmdf <- apply(wolflocs1kmdf,2,as.character)
+write.csv(wolflocs1kmdf, "C:/Users/Naomi Louchouarn/Desktop/2018_effort/GISIntermediates/WolfLocs/WolfLocs_Buff_1km_percentcover.csv")
+
+wolflocs10km <- arc.open("C:/Users/Naomi Louchouarn/OneDrive - UW-Madison/2018_effort/GISIntermediates/WolfLocs/Buffers/WolfLocs_10kmBuff.shp")
+wolflocs10km <- arc.select(object = wolflocs10km)
+wolflocs10km <- arc.data2sp(wolflocs10km)
+wolflocs10km <- subset(wolflocs10km, RASTERVA_1 != -9999 &  RASTERVA_1 != 0)
+wolflocs10km <- wolflocs10km[, c(3, 4, 7, 8, 13)]
+wolflocs10km <- wolflocs10km[order(wolflocs10km$ID),]
+wolflocs10km@data$ID_1 <- seq(1, 794, 1)
+wolflocs10kmdf <- Percent.cov(vectorlayer = wolflocs10km, zoneID = "ID_1", AdditCol = c(2,3), rasterwd = "C:/Users/Naomi Louchouarn/Desktop/2018_effort/GISIntermediates/Landcover/LCDataforR", conditdf = ex_conditdf, conditvalue = wolflocs10km$Year)
+wolflocs10kmdf <- apply(wolflocs10kmdf,2,as.character)
+write.csv(wolflocs10kmdf, "C:/Users/Naomi Louchouarn/Desktop/2018_effort/GISIntermediates/WolfLocs/WolfLocs_Buff_10km_percentcover.csv")
+
+
+wolflocs23km <- arc.open("C:/Users/Naomi Louchouarn/OneDrive - UW-Madison/2018_effort/GISIntermediates/WolfLocs/Buffers/WolfLocs_23_3kmBuff.shp")
+wolflocs23km <- arc.select(object = wolflocs23km)
+wolflocs23km <- arc.data2sp(wolflocs23km)
+wolflocs23km <- subset(wolflocs23km, RASTERVA_1 != -9999 &  RASTERVA_1 != 0)
+wolflocs23km <- wolflocs23km[, c(3, 4, 7, 8, 13)]
+wolflocs23km <- wolflocs23km[order(wolflocs23km$ID),]
+wolflocs23km@data$ID_1 <- seq(1, 794, 1)
+wolflocs23kmdf <- Percent.cov(vectorlayer = wolflocs23km, zoneID = "ID_1", AdditCol = c(2,3), rasterwd = "C:/Users/Naomi Louchouarn/Desktop/2018_effort/GISIntermediates/Landcover/LCDataforR", conditdf = ex_conditdf, conditvalue = wolflocs23km$Year)
+wolflocs23kmdf <- apply(wolflocs23kmdf,2,as.character)
+write.csv(wolflocs23kmdf, "C:/Users/Naomi Louchouarn/Desktop/2018_effort/GISIntermediates/WolfLocs/WolfLocs_Buff_23km_percentcover.csv")
+
+
+#Randoms
+randoms100m <- arc.open("C:/Users/Naomi Louchouarn/OneDrive - UW-Madison/2018_effort/GISFinals/SamplePoints/Buffers/RandomPoints_100mBuff.shp")
+randoms100m <- arc.select(object = wolflocs100m)
+randoms100m <- arc.data2sp(wolflocs100m)
+colnames(randoms100m@data)
+randoms100mdf <- Percent.cov(vectorlayer = randoms100m, zoneID = "ID_1", AdditCol = 3, rasterwd = "C:/Users/Naomi Louchouarn/Desktop/2018_effort/GISIntermediates/Landcover/LCDataforR", conditdf = ex_conditdf, conditvalue = randoms100m$Year)
+randoms100mdf <- apply(randoms100mdf,2,as.character)
+write.csv(randoms100mdf, "C:/Users/Naomi Louchouarn/Desktop/2018_effort/GISIntermediates/WolfLocs/RandomPoints_Buff_100m_percentcover.csv")
+
+randoms275m <- arc.open("C:/Users/Naomi Louchouarn/OneDrive - UW-Madison/2018_effort/GISFinals/SamplePoints/Buffers/RandomPoints_275mBuff.shp")
+randoms275m <- arc.select(object = randoms275m)
+randoms275m <- arc.data2sp(randoms275m)
+randoms275mdf <- Percent.cov(vectorlayer = randoms275m, zoneID = "ID_1", AdditCol = c(2,3), rasterwd = "C:/Users/Naomi Louchouarn/Desktop/2018_effort/GISIntermediates/Landcover/LCDataforR", conditdf = ex_conditdf, conditvalue = randoms275m$Year)
+randoms275mdf <- apply(randoms275mdf,2,as.character)
+write.csv(randoms275mdf, "C:/Users/Naomi Louchouarn/Desktop/2018_effort/GISIntermediates/WolfLocs/RandomPoints_Buff_275m_percentcover.csv")
+
+randoms1km <- arc.open("C:/Users/Naomi Louchouarn/OneDrive - UW-Madison/2018_effort/GISFinals/SamplePoints/Buffers/RandomPoints_1kmBuff.shp")
+randoms1km <- arc.select(object = randoms1km)
+randoms1km <- arc.data2sp(randoms1km)
+randoms1kmdf <- Percent.cov(vectorlayer = randoms1km, zoneID = "ID_1", AdditCol = c(2,3), rasterwd = "C:/Users/Naomi Louchouarn/Desktop/2018_effort/GISIntermediates/Landcover/LCDataforR", conditdf = ex_conditdf, conditvalue = randoms1km$Year)
+randoms1kmdf <- apply(randoms1kmdf,2,as.character)
+write.csv(randoms1kmdf, "C:/Users/Naomi Louchouarn/Desktop/2018_effort/GISIntermediates/WolfLocs/RandomPoints_Buff_1km_percentcover.csv")
+
+randoms10km <- arc.open("C:/Users/Naomi Louchouarn/OneDrive - UW-Madison/2018_effort/GISFinals/SamplePoints/Buffers/RandomPoints_10kmBuff.shp")
+randoms10km <- arc.select(object = randoms10km)
+randoms10km <- arc.data2sp(randoms10km)
+randoms10kmdf <- Percent.cov(vectorlayer = randoms10km, zoneID = "ID_1", AdditCol = c(2,3), rasterwd = "C:/Users/Naomi Louchouarn/Desktop/2018_effort/GISIntermediates/Landcover/LCDataforR", conditdf = ex_conditdf, conditvalue = randoms10km$Year)
+randoms10kmdf <- apply(randoms10kmdf,2,as.character)
+write.csv(randoms10kmdf, "C:/Users/Naomi Louchouarn/Desktop/2018_effort/GISIntermediates/WolfLocs/RandomPoints_Buff_10km_percentcover.csv")
+
+
+randoms23km <- arc.open("C:/Users/Naomi Louchouarn/OneDrive - UW-Madison/2018_effort/GISFinals/SamplePoints/Buffers/RandomPoints_23kmBuff.shp")
+randoms23km <- arc.select(object = randoms23km)
+randoms23km <- arc.data2sp(randoms23km)
+randoms23kmdf <- Percent.cov(vectorlayer = randoms23km, zoneID = "ID_1", AdditCol = c(2,3), rasterwd = "C:/Users/Naomi Louchouarn/Desktop/2018_effort/GISIntermediates/Landcover/LCDataforR", conditdf = ex_conditdf, conditvalue = randoms23km$Year)
+randoms23kmdf <- apply(randoms23kmdf,2,as.character)
+write.csv(randoms23kmdf, "C:/Users/Naomi Louchouarn/Desktop/2018_effort/GISIntermediates/WolfLocs/RandomPointa_Buff_23km_percentcover.csv")
+
+wolflocs <- arc.data2sp(wolflocs)
+colnames(wolflocs@data)
+wolflocs <- wolflocs[, c(3, 7, 8, 13)]
+wolflocs_sort <- wolflocs[order(wolflocs$ID),]
+wolflocs_sort@data$ID_1 <- seq(1, 794, 1)
+wolflocsdf <- Percent.cov(vectorlayer = wolflocs_sort, zoneID = "ID_1", AdditCol = c(1:3), rasterwd = "C:/Users/Naomi Louchouarn/Desktop/2018_effort/GISIntermediates/Landcover/LCDataforR", conditdf = ex_conditdf, conditvalue = wolflocs_sort$Year)
+wolflocsdf <- apply(wolflocsdf,2,as.character)
+write.csv(wolflocsdf, "C:/Users/Naomi Louchouarn/Desktop/2018_effort/GISIntermediates/WolfLocs/WolfLocs_Buff_275m_percentcover.csv")
+
+#Transpose and spread by ID
+colnames(wolflocsdf) <- c("ID_1", "ID", "Year", "Mortality", "CoverType", "PercentageCover")
+#this needs to be done on the original Percent/cov output
+wolflocs_spread <- spread(wolflocsdf, ID, PercentageCover)
+
+#Randoms buffers
+Buffer <- arc.open("C:/Users/Naomi Louchouarn/Desktop/2018_effort/GISIntermediates/WolfLocs/Buff275m_Randoms_withIDandYear.shp")
+buffer_df <- arc.select(object = Buffer, fields = c("FID", "Shape", "CID", "BUFF_DIST", "ORIG_FID", "FID_1", "CID_1", "BUFF_DIS_1", "ORIG_FID_1", "ID_1", "Year"))
+buffer.df.sp <- arc.data2sp(buffer_df)
+buffer.df.sp <- buffer.df.sp[, c(3, 9, 10)]
+
+Finaldf <- Percent.cov(vectorlayer = buffer.df.sp, zoneID = "ID_1", AdditCol = 3, rasterwd = "C:/Users/Naomi Louchouarn/Desktop/2018_effort/GISIntermediates/Landcover/LCDataforR", conditdf = ex_conditdf, conditvalue = buffer.df.sp$Year)
+Finaldf <- apply(Finaldf,2,as.character)
+write.csv(Finaldf, "C:/Users/Naomi Louchouarn/Desktop/2018_effort/GISIntermediates/WolfLocs/Randoms_Buff_275m_percentcover.csv")
+
+

@@ -1,0 +1,870 @@
+---
+title: "Two Step Analysis"
+author: "Naomi Louchouarn"
+date: "8/2/2021"
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This document examines the global trends of phase and treatment effects on all predators/all herds. Then it examines wether any carnivores deviate markedly from this global trend. Finally it examines whether any herds deviate markedly from the global trend. 
+
+## 1. Standardizing the direct and indirect predator signs
+
+To do this portion subtract from the mean of all observations and divide by the SD of all observations. Do this for both response variables; approaches and indirect sign
+
+```{r include = F}
+#this is the Indirect wolf sign data
+A1 <- c(0.2,0,0,0)
+A2 <- c(0.285714286, 0.333333333, 0.571428571, 0.666666667)
+B1 <- c(0, 0.25, 0.375, 0.25)
+B2 <- c(0.5,0.5,0.285714286,0)
+
+WI.data <- data.frame(
+  WI=c(A1, B2, B1, A2),
+  herd.id=factor(c(
+    rep(c(1,2,3,4),2),
+    rep(c(5,6,7,8),2)
+  )),
+  seq=rep(c('CT', 'TC'), each = 8),
+  trta=rep(c('C','T','T','C'), each = 4),
+  phase=factor(rep(c('1','2','1','2'), each=4))
+)
+WI.data<- WI.data[order(WI.data$herd.id),]
+#wolf approach data
+A1 <- c(0,0,0,0)
+A2 <- c(0, 0, 0, 0)
+B1 <- c(0, 0, 0.00671141, 0)
+B2 <- c(0,0,0,0)
+
+WA.data <- data.frame(
+  WA=c(A1, B2, B1, A2),
+  herd.id=factor(c(
+    rep(c(1,2,3,4),2),
+    rep(c(5,6,7,8),2)
+  )),
+  seq=rep(c('CT', 'TC'), each = 8),
+  trta=rep(c('C','T','T','C'), each = 4),
+  phase=factor(rep(c('1','2','1','2'), each=4))
+)
+WA.data<- WA.data[order(WA.data$herd.id),]
+
+#bear indirect sign data
+A1 <- c(.8,0.625,0.4444444,0.28571429)
+A2 <- c(0.28571429, 0.666667, 0.42857143, 0.6666667)
+B1 <- c(0.14285714, 1.125, 0.375, 0.25)
+B2 <- c(0.75,0.6666667,0.71428571,0.8)
+
+BI.data <- data.frame(
+  BI=c(A1, B2, B1, A2),
+  herd.id=factor(c(
+    rep(c(1,2,3,4),2),
+    rep(c(5,6,7,8),2)
+  )),
+  seq=rep(c('CT', 'TC'), each = 8),
+  trta=rep(c('C','T','T','C'), each = 4),
+  phase=factor(rep(c('1','2','1','2'), each=4))
+)
+BI.data<- BI.data[order(BI.data$herd.id),]
+
+#Bear approach data
+A1 <- c(0.02173913, 0.033112583, 0, 0.016393443)
+A2 <- c(0.006289308, 0.043103448, 0.022556391, 0)
+B1 <- c(0.006622517, 0.013888889, 0.040268456, 0)
+B2 <- c(0, 0.00990099, 0.007633588, 0)
+
+BA.data <- data.frame(
+  BA=c(A1, B2, B1, A2),
+  herd.id=factor(c(
+    rep(c(1,2,3,4),2),
+    rep(c(5,6,7,8),2)
+  )),
+ seq=rep(c('CT', 'TC'), each = 8),
+  trta=rep(c('C','T','T','C'), each = 4),
+  phase=factor(rep(c('1','2','1','2'), each=4))
+)
+BA.data<- BA.data[order(BA.data$herd.id),]
+
+#Cougar approach data 
+A1 <- c(0,0,0,0)
+A2 <- c(0, 0.025862069, 0, 0)
+B1 <- c(0,0,0,0)
+B2 <- c(0,0,0,0)
+CA.data <- data.frame(
+  CA=c(A1, B2, B1, A2),
+  herd.id=factor(c(
+    rep(c(1,2,3,4),2),
+    rep(c(5,6,7,8),2)
+  )),
+  seq=rep(c('CT', 'TC'), each = 8),
+  trta=rep(c('C','T','T','C'), each = 4),
+  phase=factor(rep(c('1','2','1','2'), each=4))
+)
+CA.data<- CA.data[order(CA.data$herd.id),]
+
+#Cougar indirect sign data
+
+A1 <- c(0,0,0.11111,0)
+A2 <- c(0, 0, 0, 0)
+B1 <- c(0,0,0,0)
+B2 <- c(0.25,0,0,0)
+CI.data <- data.frame(
+  CI=c(A1, B2, B1, A2),
+  herd.id=factor(c(
+    rep(c(1,2,3,4),2),
+    rep(c(5,6,7,8),2)
+  )),
+  seq=rep(c('CT', 'TC'), each = 8),
+  trta=rep(c('C','T','T','C'), each = 4),
+  phase=factor(rep(c('1','2','1','2'), each=4))
+)
+CI.data<- CI.data[order(CI.data$herd.id),]
+
+#Throw them together
+anon_data <- data.frame(cbind(Herd = WA.data$herd.id, Sequence = WA.data$seq, Treatment.Control= WA.data$trta, Phase =as.character(WA.data$phase), BI = as.numeric(BI.data$BI), WI = as.numeric(WI.data$WI), CI = as.numeric(CI.data$CI), BA = as.numeric(BA.data$BA), WA = as.numeric(WA.data$WA),CA = as.numeric(CA.data$CA)))
+anon_data$BI <- as.numeric(anon_data$BI)
+anon_data$WI<- as.numeric(anon_data$WI)
+anon_data$CI<- as.numeric(anon_data$CI)
+anon_data$BA<- as.numeric(anon_data$BA)
+anon_data$WA<- as.numeric(anon_data$WA)
+anon_data$CA<- as.numeric(anon_data$CA)
+anon_data$risk <- c(4.5,6.5,5,5,3,2,2,3,2,1,3,4,2,3,5,4)
+anon_data$BBA <- c(0.028985507,0.010526316,0.01986755,0.00990099,0.021505376,0,0,0,0.006622517,0,0.006944444,0,0.020134228,0.007518797,0.010989011,0)
+anon_data$CoyA <- c(0,	0.021052632, 0.079470199,	0, 0.009090909,	0.022900763, 0.005464481, 0.024390244,0,	0, 0.003472222,	0.034482759, 0.013422819,	0.030075188, 0.066666667,	0)
+anon_data$CoyI <- c(0.4,	0.5,
+0.25,	0.333333333,
+0.444444444,	0.428571429,
+0.571428571,	0.6,
+0.142857143,	1,
+0.125,	0.166666667,
+0.25,	0.428571429,
+0.25,	0)
+anon_data$GB_VL<-c(240.6666667,	0,
+3,	0,
+0,	1,
+62,	0,
+3, 22,
+3.5,	1.4,
+333.33,	2.6667,
+0, 0)
+anon_data$W_VL<- c(0,	0,
+0,	0,
+0,	0,
+0,	0,
+0,	0,
+0,	0,
+1,	0,
+0, 0)
+anon_data$C_VL<- c(0,	0,
+0,	0,
+0,	0,
+0,	3,
+0,	0,
+0, 2.666666667,
+0,	0,
+0,	0)
+
+anon_data$Ridervisits <- c(3,21,7,18,3,13,5,13,9,4,22,11,15,8,13,4)
+anon_data$Joevisits <- c(3,12,7,9,3,4,5,2,2,4,7,11,7,8,5,4)
+anon_data$extrariders <- anon_data$Ridervisits-anon_data$Joevisits  
+anon_data$Elk <- c(3,4,9,26,9,2,0,0,3,8,2,1,0,14,1,0)
+anon_data$Moose <-c(4,5,6,3,8,1,1,1,3,3,5,6,2,4,0,2)
+anon_data$Deer <-c(23,3,46,4,25,14,3,10,14,5,55,20,30,10,8,2)
+anon_data$AllPrey <- anon_data$Elk+anon_data$Moose+anon_data$Deer
+anon_data$Herd <- as.factor(anon_data$Herd)
+anon_data$cows <- c(400,400,355,355,82,82,161,161,250,250,480,480,361,361,380,380)
+anon_data$calves <- c(400,400,355,355,82,82,0,0,250,250,480,480,361,361,0,0)
+
+```
+
+```{r}
+anon_data$App<- anon_data$BA+anon_data$WA+anon_data$CA+anon_data$BBA
+app_mean <- mean(anon_data$App)
+app_sd <- sd(anon_data$App)
+anon_data$Standard_App <- (anon_data$App-app_mean)/app_sd
+hist(anon_data$Standard_App)
+
+```
+```{r}
+anon_data$Ind <- anon_data$BI+anon_data$WI+anon_data$CI
+ind_mean<- mean(anon_data$Ind)
+ind_sd<-sd(anon_data$Ind)
+anon_data$Standard_Ind<- (anon_data$Ind-ind_mean)/ind_sd
+hist(anon_data$Standard_Ind)
+
+```
+```{r}
+anon_data$pooled <- anon_data$Standard_App+anon_data$Standard_Ind
+hist(anon_data$pooled)
+```
+
+## 2. ANOVA of pooled predator data
+```{r}
+pooled_aov<- aov(pooled~Sequence+Phase+Treatment.Control+Error(Herd), data= anon_data)
+summary(pooled_aov)
+```
+```{r echo= FALSE}
+library('emmeans')
+pooled_emm<- emmeans(pooled_aov, ~Treatment.Control|Phase)
+plot(pooled_emm, main = "Least-Squares means of pooled data", xlab = "least-squares means of pooled data", ylab = "Treatment",
+       colors = "brown")
+```
+
+
+Again, phase is significant using a significance value of .10, with phase x having more predators than phase y.
+
+## 3. Examine each predator species to see if any differ from the global trend
+```{r}
+BA <- anon_data$BA+anon_data$BBA
+BA_mean <- mean(BA)
+BA_sd <- sd(BA)
+anon_data$Standard_BA <- (BA-BA_mean)/BA_sd
+hist(anon_data$Standard_BA)
+
+GB_mean <- mean(anon_data$BA) 
+GB_sd <- sd(anon_data$BA)
+anon_data$Standard_GBA <- (anon_data$BA-GB_mean)/GB_sd
+
+BI_mean <- mean(anon_data$BI)
+BI_sd <- sd(anon_data$BI)
+anon_data$Standard_BI <- (anon_data$BI-BI_mean)/BI_sd
+hist(anon_data$Standard_BI)
+
+anon_data$B<- anon_data$Standard_BA+anon_data$Standard_BI
+B_aov <- aov(B~Sequence+Phase+Treatment.Control+Error(Herd), data= anon_data)
+summary(B_aov)
+
+shapiro.test(anon_data$B)
+#bear data is normal
+library(emmeans)
+B_emm <- emmeans(B_aov, ~Treatment.Control|Phase)
+
+
+GBA_aov <- aov(BA~Sequence+Phase+Treatment.Control+Error(Herd), data= anon_data)
+summary(GBA_aov)
+
+GBA_emm <- emmeans(GBA_aov, ~Treatment.Control|Phase)
+plot(GBA_emm, main = "Least-Squares means of Grizzly Bears", xlab = "least-squares means of Grizzly Bears", ylab = "Treatment",
+       colors = "brown")
+
+BBA_aov <- aov(BBA~Sequence+Phase+Treatment.Control+Error(Herd), data= anon_data)
+summary(GBA_aov)
+
+BBA_emm <- emmeans(BBA_aov, ~Treatment.Control|Phase)
+
+plot(BBA_emm, main = "Least-Squares means of Black Bears", xlab = "least-squares means of Black Bears", ylab = "Treatment",
+       colors = "brown")
+
+WA_mean <- mean(anon_data$WA)
+WA_sd <- sd(anon_data$WA)
+anon_data$Standard_WA <- (anon_data$WA-WA_mean)/WA_sd
+hist(anon_data$Standard_WA)
+
+WI_mean <- mean(anon_data$WI)
+WI_sd <- sd(anon_data$WI)
+anon_data$Standard_WI <- (anon_data$WI-WI_mean)/WI_sd
+hist(anon_data$Standard_WI)
+
+anon_data$W<- anon_data$Standard_WA+anon_data$Standard_WI
+shapiro.test(anon_data$W)
+#wolf data is not normal
+W_aov <- aov(W~Sequence+Phase+Treatment.Control+Error(Herd), data= anon_data)
+summary(W_aov)
+
+W_emm <- emmeans(W_aov, ~Treatment.Control|Phase)
+
+
+CA_mean <- mean(anon_data$CA)
+CA_sd <- sd(anon_data$CA)
+anon_data$Standard_CA <- (anon_data$CA-CA_mean)/CA_sd
+hist(anon_data$Standard_CA)
+
+CI_mean <- mean(anon_data$CI)
+CI_sd <- sd(anon_data$CI)
+anon_data$Standard_CI <- (anon_data$CI-CI_mean)/CI_sd
+hist(anon_data$Standard_CI)
+
+anon_data$C<- anon_data$Standard_CA+anon_data$Standard_CI
+shapiro.test(anon_data$C)
+#cougar data is not normal
+C_aov <- aov(C~Sequence+Phase+Treatment.Control+Error(Herd), data= anon_data)
+summary(C_aov)
+
+C_emm <- emmeans(C_aov, ~Treatment.Control|Phase)
+
+
+CoyA_mean <- mean(anon_data$CoyA)
+CoyA_sd <- sd(anon_data$CoyA)
+anon_data$Standard_CoyA <- (anon_data$CoyA-CoyA_mean)/CoyA_sd
+hist(anon_data$Standard_CoyA)
+
+CoyI_mean <- mean(anon_data$CoyI)
+CoyI_sd <- sd(anon_data$CoyI)
+anon_data$Standard_CoyI <- (anon_data$CoyI-CoyI_mean)/CoyI_sd
+hist(anon_data$Standard_CoyI)
+
+anon_data$Coy<- anon_data$Standard_CoyA+anon_data$Standard_CoyI
+shapiro.test(anon_data$Coy)
+#coyote data is normal
+Coy_aov <- aov(Coy~Sequence+Phase+Treatment.Control+Error(Herd), data= anon_data)
+summary(Coy_aov)
+
+Coy_emm <- emmeans(Coy_aov, ~Treatment.Control|Phase)
+plot(Coy_emm, main = "Least-Squares means of Coyotr", xlab = "least-squares means of Coyote", ylab = "Treatment",
+       colors = "brown")
+```
+## Graph for paper
+```{r}
+library(ggplot2)
+library(multcompView)
+
+all_pred_phase1_T <- subset(anon_data, Treatment.Control == "T" & Phase == 1)
+mean(all_pred_phase1_T$pooled)
+sd(all_pred_phase1_T$pooled)
+mean(all_pred_phase1_T$W)
+sd(all_pred_phase1_T$W)
+mean(all_pred_phase1_T$B)
+sd(all_pred_phase1_T$B)
+mean(all_pred_phase1_T$C)
+sd(all_pred_phase1_T$C)
+mean(all_pred_phase1_T$Coy)
+sd(all_pred_phase1_T$Coy)
+
+all_pred_phase1_PC <- subset(anon_data, Treatment.Control == "C" & Phase == 1)
+mean(all_pred_phase1_PC$pooled)
+sd(all_pred_phase1_PC$pooled)
+mean(all_pred_phase1_PC$W)
+sd(all_pred_phase1_PC$W)
+mean(all_pred_phase1_PC$B)
+sd(all_pred_phase1_PC$B)
+mean(all_pred_phase1_PC$C)
+sd(all_pred_phase1_PC$C)
+mean(all_pred_phase1_PC$Coy)
+sd(all_pred_phase1_PC$Coy)
+
+all_pred_phase2_T <- subset(anon_data, Treatment.Control == "T" & Phase == 2)
+mean(all_pred_phase2_T$pooled)
+sd(all_pred_phase2_T$pooled)
+mean(all_pred_phase2_T$W)
+sd(all_pred_phase2_T$W)
+mean(all_pred_phase2_T$B)
+sd(all_pred_phase2_T$B)
+mean(all_pred_phase2_T$C)
+sd(all_pred_phase2_T$C)
+mean(all_pred_phase2_T$Coy)
+sd(all_pred_phase2_T$Coy)
+
+all_pred_phase2_PC <- subset(anon_data, Treatment.Control == "C" & Phase == 2)
+mean(all_pred_phase2_PC$pooled)
+sd(all_pred_phase2_PC$pooled)
+mean(all_pred_phase2_PC$W)
+sd(all_pred_phase2_PC$W)
+mean(all_pred_phase2_PC$B)
+sd(all_pred_phase2_PC$B)
+mean(all_pred_phase2_PC$C)
+sd(all_pred_phase2_PC$C)
+mean(all_pred_phase2_PC$Coy)
+sd(all_pred_phase2_PC$Coy)
+
+input = ("
+         Treatment.Control	value	.group	Phase
+PC 1.5225463  All_LC 1
+PC 0.6620902 All_LC 1
+PC  -0.9000876 All_LC 1
+PC -1.8154938 All_LC 1
+T  -2.3195682 All_LC 1
+T  1.1674050 All_LC 1
+T  1.6036801 All_LC 1
+T  -1.5048337 All_LC 1
+PC  1.0339262 All_LC 2
+PC  0.5888912 All_LC 2
+PC  -0.3728703 All_LC 2
+PC  -1.2204662 All_LC 2
+T  -1.5287626 All_LC 2
+T  2.3248963 All_LC 2
+T  0.6142531 All_LC 2
+T  0.1443937 All_LC 2
+PC -0.53659347 Wolf 1
+PC -1.43760313 Wolf 1
+PC  -1.43760313 Wolf 1
+PC  -1.43760313 Wolf 1
+T  -1.43760313 Wolf 1
+T -0.31134106 Wolf 1
+T 4.25178998  Wolf 1
+T  -0.31134106 Wolf 1
+PC 0.81492101  Wolf 2
+PC  0.81492101 Wolf 2
+PC  -0.15044648 Wolf 2
+PC -1.43760313 Wolf 2
+T -0.15044648 Wolf 2
+T 0.06407963 Wolf 2
+T 1.13671018 Wolf 2
+T 1.56576240 Wolf 2
+PC 2.35817895  Bear 1
+PC 1.80363896 Bear 1
+PC  -0.52592936 Bear 1
+PC  -1.40105772 Bear 1
+T  -2.11316396 Bear 1
+T 2.05171503 Bear 1
+T 1.22982660  Bear 1
+T  -1.81914817 Bear 1
+PC 0.07624565  Bear 2
+PC  0.23859708 Bear 2
+PC  -0.21125646 Bear 2
+PC -0.27909280 Bear 2
+T -1.92639119 Bear 2
+T 1.45008652 Bear 2
+T -0.14130305 Bear 2
+T -0.79094607 Bear 2
+PC -0.5884677  Cougar 1
+PC -0.5884677 Cougar 1
+PC  1.0778232 Cougar 1
+PC  -0.5884677 Cougar 1
+T  -0.5884677 Cougar 1
+T -0.5884677 Cougar 1
+T -0.5884677  Cougar 1
+T  -0.5884677 Cougar 1
+PC 3.1607243  Cougar 2
+PC  -0.5884677 Cougar 2
+PC  -0.5884677 Cougar 2
+PC -0.5884677 Cougar 2
+T -0.5884677 Cougar 2
+T 3.4115323 Cougar 2
+T -0.5884677  Cougar 2
+T -0.5884677 Cougar 2
+PC -0.6726891  Coyote 1
+PC 1.9996597 Coyote 1
+PC  -0.1089494 Coyote 1
+PC  0.2723326 Coyote 1
+T  -1.7497852 Coyote 1
+T -1.6803709 Coyote 1
+T -0.7435020  Coyote 1
+T  1.4678876 Coyote 1
+PC 0.6205656  Coyote 2
+PC  -0.9519362 Coyote 2
+PC  0.3981311 Coyote 2
+PC 1.1780582 Coyote 2
+T 1.8405351 Coyote 2
+T -0.2178734 Coyote 2
+T 0.6961083 Coyote 2
+T -2.3481719 Coyote 2
+         ")
+Data = read.table(textConnection(input), head = T)
+Data$Phase <- as.factor(Data$Phase)
+Data$value <- as.numeric(Data$value)
+Data$TC <- as.factor(Data$Treatment.Control)
+
+ggplot(Data, aes(x = Treatment.Control, y = value, color =.group))+
+  geom_boxplot() +
+  #scale_color_manual(values = c("#EA8210","#D80048","#9134FF", "#0CAEED"))+
+  facet_wrap(.group~Phase, ncol = 2)+
+  ylab("carnivore presence")+
+  xlab("Treatment")+
+  theme_bw() +
+  theme(axis.title   = element_text(size = 14),
+        axis.text    = element_text(size = 14,),
+        legend.title = element_blank(), 
+        legend.text = element_text(size = 14),
+        strip.text.x = element_text(size = 14))
+
+setwd("/Volumes/ADATA HD650/AlbertaProject/Mapping/PDF/")
+setEPS()
+postscript("Fig1_PLOSBIO.eps")
+ggplot(Data, aes(x = Treatment.Control, y = value, color =.group))+
+  geom_boxplot() +
+  #scale_color_manual(values = c("#EA8210","#D80048","#9134FF", "#0CAEED"))+
+  facet_wrap(.group~Phase, ncol = 2)+
+  ylab("carnivore presence")+
+  xlab("Treatment")+
+  theme_bw() +
+  theme(axis.title   = element_text(size = 14),
+        axis.text    = element_text(size = 14,),
+        legend.title = element_blank(), 
+        legend.text = element_text(size = 14),
+        strip.text.x = element_text(size = 14))
+
+dev.off()
+```
+
+## Time spent-Average visit length
+Since there was no significant effect of treatment on the primary predator species, I decided to examine the length of visit between treatments. 
+
+### Wolf
+```{r}
+aov_w_vl <- aov(W_VL~Sequence+Phase+Treatment.Control+Error(Herd), data= anon_data)
+summary(aov_w_vl)
+
+wvl_emm <- emmeans(aov_w_vl, ~Treatment.Control|Phase)
+plot(wvl_emm, main = "Least-Squares means of avg wolf visit (s)", xlab = "least-squares means of avg wolf visit (s)", ylab = "Treatment",
+       colors = "brown")
+```
+
+There was only one wolf approach though, so I wonder if this is really helpful...??
+
+## Grizzly bear
+```{r}
+aov_gb_vl <- aov(GB_VL~Sequence+Phase+Treatment.Control+Error(Herd), data= anon_data)
+summary(aov_gb_vl)
+
+gbvl_emm <- emmeans(aov_gb_vl, ~Treatment.Control|Phase)
+plot(gbvl_emm, main = "Least-Squares means of avg grizzly visit (s)", xlab = "least-squares means of avg grizzly visit (s)", ylab = "Treatment",
+       colors = "brown")
+```
+
+## Cougar
+```{r}
+aov_c_vl <- aov(C_VL~Sequence+Phase+Treatment.Control+Error(Herd), data= anon_data)
+summary(aov_gb_vl)
+
+cvl_emm <- emmeans(aov_c_vl, ~Treatment.Control|Phase)
+plot(cvl_emm, main = "Least-Squares means of avg cougar visit (s)", xlab = "least-squares means of avg cougarvisit (s)", ylab = "Treatment",
+       colors = "brown")
+```
+
+#Covariates 
+Here im trying to look at the interactions between animals
+##Wolf as covariate to pumas
+```{r}
+ancova_c <- aov(C~Phase+W+Treatment.Control+Error(Herd), data= anon_data)
+
+summary(ancova_c)
+
+cAncova_emm <- emmeans(ancova_c, ~Treatment.Control|Phase)
+plot(cAncova_emm , main = "Least-Squares means of avg cougar visit (s)", xlab = "least-squares means of avg cougarvisit (s)", ylab = "Treatment",
+       colors = "brown")
+```
+##Bear as covariate to wolf
+```{r}
+ancova_w <- aov(W~Phase+Treatment.Control+B+Error(Herd), data= anon_data)
+summary(ancova_w)
+wAncova_emm <- emmeans(ancova_w, ~Treatment.Control|Phase)
+plot(wAncova_emm , main = "Least-Squares means of avg cougar visit (s)", xlab = "least-squares means of avg cougarvisit (s)", ylab = "Treatment",
+       colors = "brown")
+```
+##Grizzly Bear as covariate to wolf
+```{r}
+ancova_w_gb <- aov(W~Phase+Treatment.Control+Standard_GBA+Error(Herd), data= anon_data)
+summary(ancova_w_gb)
+wAncova_emm_g <- emmeans(ancova_w_gb, ~Treatment.Control|Phase)
+plot(wAncova_emm_g , main = "Least-Squares means of avg cougar visit (s)", xlab = "least-squares means of avg cougarvisit (s)", ylab = "Treatment",
+       colors = "brown")
+```
+
+##wolf as covariate to bear
+```{r}
+ancova_b <- aov(B~Phase+W+Treatment.Control+Error(Herd), data= anon_data)
+summary(ancova_b)
+wAncova_emm <- emmeans(ancova_b, ~Treatment.Control|Phase)
+plot(wAncova_emm , main = "Least-Squares means of avg cougar visit (s)", xlab = "least-squares means of avg cougarvisit (s)", ylab = "Treatment",
+       colors = "brown")
+```
+##Wolf as covariate to coyote
+```{r}
+ancova_coy <- aov(Coy~Sequence+Phase+W+Treatment.Control+Error(Herd), data= anon_data)
+summary(ancova_coy)
+
+coyAncova_emm <- emmeans(ancova_coy, ~Treatment.Control|Phase+Sequence)
+plot(coyAncova_emm , main = "Least-Squares means of coyote presence", xlab = "least-squares means of Coyote presence", ylab = "Treatment",
+       colors = "brown")
+```
+
+#Bear as covariate to coyote
+```{r}
+ancova_coy_b <- aov(Coy~Sequence+Phase+B+Treatment.Control+Error(Herd), data= anon_data)
+summary(ancova_coy_b)
+coyAncova_emm_b <- emmeans(ancova_coy_b, ~Treatment.Control|Phase+Sequence)
+plot(coyAncova_emm_b , main = "Least-Squares means of avg cougar visit (s)", xlab = "least-squares means of avg cougarvisit (s)", ylab = "Treatment",
+       colors = "brown")
+```
+```{r}
+ancova_coy_cou <- aov(Coy~Sequence+Phase+C+Treatment.Control+Error(Herd), data= anon_data)
+summary(ancova_coy_cou)
+coyAncova_emm_cou <- emmeans(ancova_coy_cou, ~Treatment.Control|Phase+Sequence)
+plot(coyAncova_emm_cou , main = "Least-Squares means of avg cougar visit (s)", xlab = "least-squares means of avg cougarvisit (s)", ylab = "Treatment",
+       colors = "brown")
+```
+#prey as covariate to wolf, predators
+```{r}
+PooledAllPrey_ANCOVA <-aov(pooled~Sequence+Phase+AllPrey+Treatment.Control+Error(Herd), data= anon_data)
+summary(PooledAllPrey_ANCOVA)
+PooledPrey_emm<- emmeans(PooledAllPrey_ANCOVA, ~Treatment.Control|Phase)
+plot(PooledPrey_emm , main = "Least-Squares means of avg cougar visit (s)", xlab = "least-squares means of avg cougarvisit (s)", ylab = "Treatment",
+       colors = "brown")
+
+```
+```{r}
+WAllPrey_ANCOVA <-aov(W~Sequence+Phase+AllPrey+Treatment.Control+Error(Herd), data= anon_data)
+summary(WAllPrey_ANCOVA)
+WPrey_emm<- emmeans(WAllPrey_ANCOVA, ~Treatment.Control|Phase)
+plot(WPrey_emm , main = "Least-Squares means of avg cougar visit (s)", xlab = "least-squares means of avg cougarvisit (s)", ylab = "Treatment",
+       colors = "brown")
+
+```
+
+```{r}
+WElk_ANCOVA <-aov(W~Sequence+Phase+Elk+Treatment.Control+Error(Herd), data= anon_data)
+summary(WElk_ANCOVA )
+WElk_emm<- emmeans(WElk_ANCOVA, ~Treatment.Control|Phase)
+plot(WElk_emm , main = "Least-Squares means of avg cougar visit (s)", xlab = "least-squares means of avg cougarvisit (s)", ylab = "Treatment",
+       colors = "brown")
+
+```
+
+```{r}
+WMoose_ANCOVA <-aov(W~Sequence+Phase+Moose+Treatment.Control+Error(Herd), data= anon_data)
+summary(WMoose_ANCOVA )
+WMoose_emm<- emmeans(WMoose_ANCOVA, ~Treatment.Control|Phase)
+plot(WMoose_emm , main = "Least-Squares means of avg cougar visit (s)", xlab = "least-squares means of avg cougarvisit (s)", ylab = "Treatment",
+       colors = "brown")
+
+MWolf_ANCOVA <-aov(Moose~Sequence+Phase+W+Treatment.Control+Error(Herd), data= anon_data)
+summary(MWolf_ANCOVA )
+MWolf_emm<- emmeans(MWolf_ANCOVA, ~Treatment.Control|Phase)
+plot(MWolf_emm , main = "Least-Squares means of avg cougar visit (s)", xlab = "least-squares means of avg cougarvisit (s)", ylab = "Treatment",
+       colors = "brown")
+```
+```{r}
+WDeer_ANCOVA <-aov(W~Sequence+Phase+Deer+Treatment.Control+Error(Herd), data= anon_data)
+summary(WDeer_ANCOVA )
+WDeer_emm<- emmeans(WDeer_ANCOVA, ~Treatment.Control|Phase)
+plot(WDeer_emm , main = "Least-Squares means of avg cougar visit (s)", xlab = "least-squares means of avg cougarvisit (s)", ylab = "Treatment",
+       colors = "brown")
+
+```
+
+```{r}
+CDeer_ANCOVA <-aov(C~Sequence+Phase+Deer+Treatment.Control+Error(Herd), data= anon_data)
+summary(CDeer_ANCOVA)
+CDeer_emm<- emmeans(CDeer_ANCOVA, ~Treatment.Control|Phase)
+plot(CDeer_emm , main = "Least-Squares means of avg cougar visit (s)", xlab = "least-squares means of avg cougarvisit (s)", ylab = "Treatment",
+       colors = "brown")
+
+```
+```{r}
+BAllPrey_ANCOVA <-aov(B~Sequence+Phase+Treatment.Control+AllPrey+Error(Herd), data= anon_data)
+summary(BAllPrey_ANCOVA )
+BAllPrey_emm<- emmeans(BAllPrey_ANCOVA, ~Treatment.Control|Phase)
+plot(BAllPrey_emm , main = "Least-Squares means of avg cougar visit (s)", xlab = "least-squares means of avg cougarvisit (s)", ylab = "Treatment",
+       colors = "brown")
+
+```
+```{r}
+PreyAnova<-aov(AllPrey~Sequence+Phase+Treatment.Control+Error(Herd), data= anon_data)
+summary(PreyAnova)
+PreyAnova_emm<- emmeans(PreyAnova, ~Treatment.Control|Phase)
+plot(PreyAnova_emm , main = "Least-Squares means of avg cougar visit (s)", xlab = "least-squares means of avg cougarvisit (s)", ylab = "Treatment",
+       colors = "brown")
+
+```
+```{r}
+ElkAnova<-aov(Elk~Sequence+Phase+Treatment.Control+Error(Herd), data= anon_data)
+summary(ElkAnova)
+ElkAnova_emm<- emmeans(ElkAnova, ~Treatment.Control|Phase)
+plot(ElkAnova_emm , main = "Least-Squares means of avg cougar visit (s)", xlab = "least-squares means of avg cougarvisit (s)", ylab = "Treatment",
+       colors = "brown")
+
+```
+
+```{r}
+MooseAnova<-aov(Moose~Sequence+Phase+Treatment.Control+Error(Herd), data= anon_data)
+summary(MooseAnova)
+MooseAnova_emm<- emmeans(MooseAnova, ~Treatment.Control|Phase)
+plot(MooseAnova_emm , main = "Least-Squares means of avg cougar visit (s)", xlab = "least-squares means of avg cougarvisit (s)", ylab = "Treatment",
+       colors = "brown")
+
+```
+
+```{r}
+DeerAnova<-aov(Deer~Sequence+Phase+Treatment.Control+Error(Herd), data= anon_data)
+summary(DeerAnova)
+DeerAnova_emm<- emmeans(DeerAnova, ~Treatment.Control|Phase)
+plot(DeerAnova_emm , main = "Least-Squares means of avg cougar visit (s)", xlab = "least-squares means of avg cougarvisit (s)", ylab = "Treatment",
+       colors = "brown")
+
+```
+
+```{r}
+Input = "Phase	SP	TC	Count
+1	Elk	C	3
+2	Elk	T	4
+1	Elk	C	9
+2	Elk	T	26
+1	Elk	C	9
+2	Elk	T	2
+1	Elk	C	0
+2	Elk	T	0
+1	Elk	T	3
+2	Elk	C	8
+1	Elk	T	2
+2	Elk	C	1
+1	Elk	T	0
+2	Elk	C	14
+1	Elk	T	1
+2	Elk	C	0
+1	Moose	C	4
+2	Moose	T	5
+1	Moose	C	6
+2	Moose	T	3
+1	Moose	C	8
+2	Moose	T	1
+1	Moose	C	1
+2	Moose	T	1
+1	Moose	T	3
+2	Moose	C	3
+1	Moose	T	5
+2	Moose	C	6
+1	Moose	T	2
+2	Moose	C	4
+1	Moose	T	0
+2	Moose	C	2
+1	Deer	C	23
+2	Deer	T	3
+1	Deer	C	46
+2	Deer	T	4
+1	Deer	C	25
+2	Deer	T	14
+1	Deer	C	3
+2	Deer	T	10
+1	Deer	T	14
+2	Deer	C	5
+1	Deer	T	55
+2	Deer	C	20
+1	Deer	T	30
+2	Deer	C	10
+1	Deer	T	8
+2	Deer	C	2 "
+Data = read.table(textConnection(Input), head = T)
+View(Data)
+library(ggplot2)
+ggplot(data= Data, aes(x=SP, y = Count))+
+  geom_bar(aes(color=TC, fill = TC), stat = "identity", position=position_dodge(0.9))+
+  facet_wrap(~Phase)
+
+input2 = "SEQ	AllPrey_Diff
+CT	18
+CT	28
+CT	25
+CT	-7
+TC	4
+TC	35
+TC	4
+TC	5 "
+Data2 = read.table(textConnection(input2), head = T)
+Data2$AllPrey_Diff<- as.numeric(Data2$AllPrey_Diff)
+Data2$SEQ<- as.factor(Data2$SEQ)
+CT<- c(18,28,25,-7)
+TC<- c(4,35,4,5)
+t.test(CT, TC)
+
+ggplot(data= anon_data, aes(x=Phase, y = AllPrey))+
+  geom_bar(aes(color=Treatment.Control, fill = Treatment.Control), stat = "identity", position=position_dodge(0.9))
+```
+#Look at wolf presence over time
+```{r}
+input = "Herd	SEQ	PHASE	Treat.Cont	Mo	W_DS	W_IS
+1	CT	1	C	1	0	0
+1	CT	1	C	2	0	0.5
+1	CT	2	T	1	0	0.666666667
+1	CT	2	T	2	0	0
+2	CT	1	C	1	0	0
+2	CT	1	C	2	0	0
+2	CT	2	T	1	0	0.75
+2	CT	2	T	2	0	0.5
+3	CT	1	C	1	0	0
+3	CT	1	C	2	0	0
+3	CT	2	T	1	0	0.25
+3	CT	2	T	2	0	0.333333333
+4	CT	1	C	1	0	0
+4	CT	1	C	2	0	0
+4	CT	2	T	1	0	0
+4	CT	2	T	2	0	0
+5	TC	1	T	1	0	0
+5	TC	1	T	2	0	0
+5	TC	2	C	1	0	0
+5	TC	2	C	2	0	0.4
+6	TC	1	T	1	0	0
+6	TC	1	T	2	0	0.333333333
+6	TC	2	C	1	0	0.25
+6	TC	2	C	2	0	0.333333333
+7	TC	1	T	1	0	0.25
+7	TC	1	T	2	0.016129032	0.8
+7	TC	2	C	1	0	0
+7	TC	2	C	2	0	0.8
+8	TC	1	T	1	0	0.5
+8	TC	1	T	2	0	0
+8	TC	2	C	1	0	2
+8	TC	2	C	2	0	0"
+
+Wolf_month= read.table(textConnection(input), head = T)
+mean_ds<- mean(Wolf_month$W_DS)
+sd_ds <- sd(Wolf_month$W_DS)
+Wolf_month$DS_Stand<- (Wolf_month$W_DS-mean_ds)/sd_ds
+
+mean_is<- mean(Wolf_month$W_IS)
+sd_is <- sd(Wolf_month$W_IS)
+Wolf_month$IS_Stand<- (Wolf_month$W_IS-mean_is)/sd_is
+
+Wolf_month$W <- Wolf_month$DS_Stand+Wolf_month$IS_Stand
+
+Wmonth_aov <- aov(W~PHASE+Mo+Treat.Cont+Error(Herd), data = Wolf_month)
+summary(Wmonth_aov)
+
+Wmonth_emm<- emmeans(Wmonth_aov, ~Treat.Cont|PHASE+Mo)
+plot(Wmonth_emm , main = "Least-Squares means of avg cougar visit (s)", xlab = "least-squares means of avg cougarvisit (s)", ylab = "Treatment",
+       colors = "brown")
+
+```
+#Try exactly what Omar did, so do first the Wilcoxon sum rank test, then do the ANOVA-type stat
+```{r}
+anon_data
+#start with treatment
+T_allpred <- subset(anon_data, Treatment.Control == "T")
+C_allpred <- subset(anon_data, Treatment.Control == "C")
+
+treatmentdiff <- wilcox.test(T_allpred$pooled, C_allpred$pooled)
+treatmentdiff
+
+wolfdiff <- wilcox.test(T_allpred$W, C_allpred$W)
+coydiff <- wilcox.test(T_allpred$Coy, C_allpred$Coy)
+beardiff <- wilcox.test(T_allpred$B, C_allpred$B)
+coudiff <- wilcox.test(T_allpred$C, C_allpred$C)
+
+wilcox.test(T_allpred$calves, C_allpred$calves)
+library(ggpubr)
+ggboxplot(anon_data, x = "Treatment.Control", y = "pooled", color = "Treatment.Control", ylab = "LC visits", xlab = "Treatment")
+ggboxplot(anon_data, x = "Treatment.Control", y = "W", color = "Treatment.Control", ylab = "W visits", xlab = "Treatment")
+ggboxplot(anon_data, x = "Treatment.Control", y = "B", color = "Treatment.Control", ylab = "W visits", xlab = "Treatment")
+library(ggplot2)
+
+ggplot(anon_data)+
+  geom_boxplot(aes(x = Treatment.Control, y = W))+
+  facet_wrap(~Herd)
+
+#now phase
+P1_allpred <- subset(anon_data, Phase == "1")
+P2_allpred <- subset(anon_data, Phase == "2")
+
+treatmentdiff <- wilcox.test(P1_allpred$pooled, P2_allpred$pooled)
+treatmentdiff
+
+wolfdiff <- wilcox.test(P1_allpred$W, P2_allpred$W)
+coydiff <- wilcox.test(P1_allpred$Coy, P2_allpred$Coy)
+beardiff <- wilcox.test(P1_allpred$B, P2_allpred$B)
+coudiff <- wilcox.test(P1_allpred$C, P2_allpred$C)
+ggboxplot(anon_data, x = "Phase", y = "W", color = "Treatment.Control", ylab = "W visits", xlab = "Phase")
+
+P1_C_W <- subset(P1_allpred, Treatment.Control == "C")
+P1_T_W <- subset(P1_allpred, Treatment.Control == "T")
+P1_W <- wilcox.test(P1_C_W$W, P1_T_W$W)
+ggboxplot(P1_allpred, x = "Treatment.Control", y = "W", color = "Treatment.Control", ylab = "W visits", xlab = "Phase")
+```
+```{r}
+#ancovas with calf numbers
+summary(aov(W~Sequence+Phase+calves+Treatment.Control+Error(Herd), data= anon_data))
+```
+

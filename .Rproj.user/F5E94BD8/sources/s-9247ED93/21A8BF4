@@ -1,0 +1,29 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1531099892927.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "21A8BF4",
+    "lastKnownWriteTime" : 2,
+    "last_content_update" : -2147483648,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "D5F059DF",
+        "caption" : "Finaldf",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=Finaldf&cache_key=D5F059DF",
+        "displayedObservations" : 6569,
+        "environment" : "",
+        "object" : "Finaldf",
+        "preview" : 0,
+        "totalObservations" : 6569,
+        "variables" : 4
+    },
+    "relative_order" : 15,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}

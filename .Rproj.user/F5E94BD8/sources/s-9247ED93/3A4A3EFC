@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1531087310165.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "27|174|110|0|\n113|200|211|0|\n219|106|275|0|\n294|32|297|0|\n300|140|376|2|\n384|61|399|0|\n404|34|438|0|\n441|200|548|0|\n550|193|585|0|\n587|92|604|0|\n",
+    "hash" : "3148726707",
+    "id" : "3A4A3EFC",
+    "lastKnownWriteTime" : 1531081626,
+    "last_content_update" : -2147483648,
+    "path" : "C:/Users/Naomi Louchouarn/Desktop/2018_effort/BuffLCPercentage.R",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "171,38",
+        "scrollLine" : "0"
+    },
+    "relative_order" : 5,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

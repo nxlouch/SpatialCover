@@ -1,0 +1,10 @@
+Package: SpatialCover
+Type: Package
+Title: Calculation of Spatial Coverage
+Version: 0.1.0
+Author: Naomi Louchouarn, MESM
+Maintainer: Naomi Louchouarn <louchouarn@wisc.edu>
+Description: 
+License: R version 3.5.0
+Encoding: UTF-8
+LazyData: true

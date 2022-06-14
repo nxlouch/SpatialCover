@@ -1,0 +1,29 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1531154131744.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "DABDD776",
+    "lastKnownWriteTime" : 424678344,
+    "last_content_update" : -2147483648,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "53B3827B",
+        "caption" : "wolflocsdf",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=wolflocsdf&cache_key=53B3827B",
+        "displayedObservations" : 3873,
+        "environment" : "",
+        "object" : "wolflocsdf",
+        "preview" : 0,
+        "totalObservations" : 3873,
+        "variables" : 6
+    },
+    "relative_order" : 14,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}

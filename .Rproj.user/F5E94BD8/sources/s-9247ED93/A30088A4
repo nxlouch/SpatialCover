@@ -1,0 +1,29 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1531590273346.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "A30088A4",
+    "lastKnownWriteTime" : 404364296,
+    "last_content_update" : -2147483648,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "867AFA01",
+        "caption" : "wolflocs100mdf",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=wolflocs100mdf&cache_key=867AFA01",
+        "displayedObservations" : 2310,
+        "environment" : "",
+        "object" : "wolflocs100mdf",
+        "preview" : 0,
+        "totalObservations" : 2310,
+        "variables" : 5
+    },
+    "relative_order" : 15,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}

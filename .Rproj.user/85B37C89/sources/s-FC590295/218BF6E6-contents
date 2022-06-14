@@ -1,0 +1,369 @@
+###Wilcoxon signed rank test, paired###
+if(!require(BSDA)){install.packages("BSDA")}
+Input = ("
+         HERD   PH.1    PH.2
+         A      4.5     6.5
+         B      5       5
+         C      3       2
+         D      2       3
+         E      2       1
+         F      3       4
+         G      2       3
+         H      5       4
+         ")
+Data = read.table(textConnection(Input), head = T)
+View(Data)
+
+wilcox.test(Data$PH.1, Data$PH.2, paired = T)
+
+t.test(Data$PH.1,Data$PH.2, paired = T)
+
+Input2 = ("
+         HERD   Diff
+         TC      2
+         TC      0
+         CT      1
+         TC     -1
+         TC      1
+         CT      -1
+         CT      -1
+         CT      1
+         ")
+Data2 = read.table(textConnection(Input2), head = T)
+View(Data2)
+
+wilcox.test(Data2$Diff~Data2$HERD, exact=F)
+
+as.numeric(as.character(Data2$HERD))
+
+########
+#Wolf Indirect Sign#
+########
+
+WolfInd <- ("
+            HERD  SEQ    PH.1  PH.2
+            1     CT   0.2	  0.5
+            2     CT    0	    0.5
+            3     CT    0	    0.285714286
+            4     CT    0	    0
+            5     TC    0	    0.285714286
+            6     TC    0.25	0.333333333
+            7     TC    0.375	0.571428571
+            8     TC    0.25	0.666666667
+            ")
+WolfInd <- read.table(textConnection(WolfInd), head = T)
+View(WolfInd)
+
+######Test of Normality########
+
+#CT#
+WI.CT <- subset(WolfInd, WolfInd$SEQ == "CT")
+shapiro.test(WI.CT$PH.1)
+##p <0.05 implying that the data are significantly different from a normal distribution
+##Cannot assume normality
+
+shapiro.test(WI.CT$PH.2)
+##p>0.05 implying that the data are not signficantly different from normal
+##can assume normality
+
+#TC#
+WI.TC <- subset(WolfInd, WolfInd$SEQ=="TC")
+shapiro.test(WI.TC$PH.1)
+##p>0.05 implying that the data are not signficantly different from normal
+##can assume normality
+
+shapiro.test(WI.TC$PH.2)
+##p>0.05 implying that the data are not signficantly different from normal
+##can assume normality
+
+###Lets try the split plot ANOVA####
+install.packages("rmarkdown")
+library(rmarkdown)
+
+#prep the data#
+C1 <- c(0.2,0,0,0)
+C2 <- c(0.285714286, 0.333333333, 0.571428571, 0.666666667)
+T1 <- c(0, 0.25, 0.375, 0.25)
+T2 <- c(0.5,0.5,0.285714286,0)
+
+WI.data <- data.frame(
+  WI=c(C1, T2, T1, C2),
+  herd.id=factor(c(
+    rep(c(1,2,3,4),2),
+    rep(c(5,6,7,8),2)
+  )),
+  seq=rep(c('CT', 'TC'), each = 8),
+  trta=rep(c('C','T','T','C'), each = 4),
+  aperiod=factor(rep(c(1,2,1,2), each=4))
+)
+WI.data<- WI.data[order(WI.data$herd.id,WI.data$aperiod),]
+
+#anova#
+WI.data$herd.id <- as.factor(WI.data$herd.id)
+WI_ANOVA <- aov(WI~seq+aperiod+trta+Error(herd.id), data= WI.data)
+summary(WI_ANOVA)
+
+warp.lm <- lm(breaks ~ wool * tension, data = warpbreaks)
+
+warp.emm <- emmeans(warp.lm, ~ tension | wool)
+plot(warp.emm)
+plot(warp.emm, by = NULL, comparisons = TRUE, adjust = "mvt", 
+     horizontal = FALSE, colors = "darkgreen")
+options(contrasts = c("contr.sum", "contr.poly"))
+WI_emm<- emmeans(WI_ANOVA, ~trta|seq+aperiod)
+plot(WI_emm)
+pairs(emm)
+TukeyHSD(WI_ANOVA, 'aperiod', conf.level - 0.95)
+##so this is suggesting that within subjects, for indirect sign of wolf, there is an effect of period but not of the treatment
+
+#Now for Wolf Direct Sign
+WolfApp <-  ("
+            HERD  SEQ   PH.1  PH.2
+            1     CT    0	    0
+            2     CT    0	    0
+            3     CT    0	    0
+            4     CT    0	    0
+            5     TC    0	    0
+            6     TC    0	    0
+            7     TC    0.00671141 0
+            8     TC    0   	0
+            ")
+WolfApp <- read.table(textConnection(WolfApp), head = T)
+View(WolfApp)
+
+C1 <- c(0,0,0,0)
+C2 <- c(0, 0, 0, 0)
+T1 <- c(0, 0, 0.00671141, 0)
+T2 <- c(0,0,0,0)
+
+WA.data <- data.frame(
+  WA=c(C1, T2, T1, C2),
+  herd.id=factor(c(
+    rep(c(1,2,3,4),2),
+    rep(c(5,6,7,8),2)
+  )),
+  seq=rep(c('CT', 'TC'), each = 8),
+  trta=rep(c('C','T','T','C'), each = 4),
+  aperiod=factor(rep(c(1,2,1,2), each=4))
+)
+WA.data<- WA.data[order(WA.data$herd.id,WA.data$aperiod),]
+
+#ANOVA#
+summary(aov(WA~aperiod+seq+trta+Error(herd.id), data= WA.data))
+#not significant so no effect of period or treatment but really, this barely counts
+
+########
+#Bear
+
+C1 <- c(.8,0.625,0.4444444,0.28571429)
+C2 <- c(0.28571429, 0.666667, 0.42857143, 0.6666667)
+T1 <- c(0.14285714, 1.125, 0.375, 0.25)
+T2 <- c(0.75,0.6666667,0.71428571,0.8)
+
+BI.data <- data.frame(
+  BI=c(C1, T2, T1, C2),
+  herd.id=factor(c(
+    rep(c(1,2,3,4),2),
+    rep(c(5,6,7,8),2)
+  )),
+  seq=rep(c('CT', 'TC'), each = 8),
+  trta=rep(c('C','T','T','C'), each = 4),
+  aperiod=factor(rep(c(1,2,1,2), each=4))
+)
+BI.data<- BI.data[order(BI.data$herd.id,BI.data$aperiod),]
+
+###Test for normality
+#CT#
+BI.CT <- subset(BI.data, BI.data$seq == "CT")
+BI.CT.1 <- subset(BI.CT, BI.CT$aperiod ==1)
+
+shapiro.test(BI.CT.1$BI)
+#Not significant, so not different from normal
+#Can assume normality
+
+BI.CT.2 <- subset(BI.CT, BI.CT$aperiod ==2)
+shapiro.test(BI.CT.2$BI)
+#Not significant, so not different from normal
+#Can assume normality
+
+#TC#
+BI.TC <- subset(BI.data, BI.data$seq == "TC")
+BI.TC.1 <- subset(BI.TC, BI.TC$aperiod ==1)
+shapiro.test(BI.TC.1$BI)
+#Not significant, so not different from normal
+#Can assume normality
+
+BI.TC.2 <- subset(BI.TC, BI.TC$aperiod ==2)
+shapiro.test(BI.TC.2$BI)
+#Not significant, so not different from normal
+#Can assume normality
+
+##ANOVA###
+summary(aov(BI~aperiod+seq+trta+Error(herd.id), data= BI.data))
+#Not significant all around
+
+####
+#Direct Sign
+#####
+
+C1 <- c(0.02173913,
+        0.046357616,
+        0,
+        0.005464481)
+C2 <- c(0.006289308,
+        0.037037037,
+        0.022556391,
+        0)
+T1 <- c(0,
+        0.00990099,
+        0.007633588,
+        0)
+T2 <- c(0.006622517,
+        0.013888889,
+        0.040268456,
+        0)
+
+BA.data <- data.frame(
+  BA=c(C1, T2, T1, C2),
+  herd.id=factor(c(
+    rep(c(1,2,3,4),2),
+    rep(c(5,6,7,8),2)
+  )),
+  seq=rep(c('CT', 'TC'), each = 8),
+  trta=rep(c('C','T','T','C'), each = 4),
+  aperiod=factor(rep(c(1,2,1,2), each=4))
+)
+BA.data<- BA.data[order(BA.data$herd.id,BA.data$aperiod),]
+
+#Test for normality
+#CT#
+BA.CT <- subset(BA.data, BA.data$seq == "CT")
+BA.CT.1 <- subset(BA.CT, BA.CT$aperiod ==1)
+
+shapiro.test(BA.CT.1$BA)
+#Not significant, so not different from normal
+#Can assume normality
+
+BA.CT.2 <- subset(BA.CT, BA.CT$aperiod ==2)
+shapiro.test(BA.CT.2$BA)
+#Not significant, so not different from normal
+#Can assume normality
+
+#TC#
+BA.TC <- subset(BA.data, BA.data$seq == "TC")
+BA.TC.1 <- subset(BA.TC, BA.TC$aperiod ==1)
+shapiro.test(BA.TC.1$BA)
+#Not significant, so not different from normal
+#Can assume normality
+
+BA.TC.2 <- subset(BA.TC, BA.TC$aperiod ==2)
+shapiro.test(BA.TC.2$BA)
+#Not significant, so not different from normal
+#Can assume normality
+
+#ANOVA#
+summary(aov(BA~aperiod+seq+trta+Error(herd.id), data= BA.data))
+#Not significant all around
+
+###Now can I do a MANOVA with each predator as a response variable?####
+
+#Start by combining the data
+#Indirect first
+
+WI.BI.data <- data.frame(cbind(BI = BI.data$BI, WI = WI.data$WI, herd.id = WI.data$herd.id, seq = WI.data$seq, trta = WI.data$trta, aperiod =WI.data$aperiod))
+WI.BI.data$BI <- as.numeric(WI.BI.data$BI)
+WI.BI.data$WI <- as.numeric(WI.BI.data$WI)
+
+#MANOVA#
+summary(manova(cbind(BI, WI)~aperiod+seq+trta+Error(herd.id), data= WI.BI.data))
+#period had a significant effect, which is no surprise becayse we know it was significant for wolves
+
+
+#Direct obs
+WA.BA.data <- data.frame(cbind(BA = BA.data$BA, WA = WA.data$WA, herd.id = WA.data$herd.id, seq = WA.data$seq, trta = WA.data$trta, aperiod =WA.data$aperiod))
+WA.BA.data$BA <- as.numeric(WA.BA.data$BA)
+WA.BA.data$WA <- as.numeric(WA.BA.data$WA)
+
+#MANOVA#
+summary(manova(cbind(BA, WA)~aperiod+seq+trta+Error(herd.id), data= WA.BA.data))
+#non significant, just like the rest
+
+#Now both Indirect and direct
+W.B.data <- data.frame(cbind(BI = BI.data$BI, WI = WI.data$WI, BA = BA.data$BA, WA = WA.data$WA, herd.id = WA.data$herd.id, seq = WA.data$seq, trta = WA.data$trta, aperiod =WA.data$aperiod))
+W.B.data$BI <- as.numeric(W.B.data$BI)
+W.B.data$WI <- as.numeric(W.B.data$WI)
+W.B.data$BA <- as.numeric(W.B.data$BA)
+W.B.data$WA <- as.numeric(W.B.data$WA)
+
+#MANOVA#
+summary(manova(cbind(BA, WA, WI, BI)~herd.id +aperiod+seq+trta+Error(herd.id), data= W.B.data))
+#non significant, just like the rest
+
+#Now MANCOVAs
+install.packages("jmv")
+library("jmv")
+
+#MANCOVA with Wolf as response, and bear as covariates
+mancova(data = W.B.data, c(WI, WA), factors = c(trta, aperiod), covs = c(BI, BA), multivar = list( "roy"), boxM = T, shapiro = T, qqPlot = T)
+
+
+#period is now barely significant but nothing else is significant
+
+#MANCOVA with bear as response and wolf as covariate
+summary(manova(cbind(BA, BI)~aperiod+seq+trta+cbind(WI, WA)+Error(herd.id), data= W.B.data), test = "Wilks", type = "III")
+#not significant anywhere
+
+
+##Now do the hills armitage, which should have the same results as the split plot ANOVAs##
+
+#wolf indirect
+WI.diff.CT <- c(-0.3, -0.5, -0.285714286, 0)
+WI.diff.TC <- c(-0.285714286,
+                -0.083333333,
+                -0.196428571,
+                -0.416666667)
+seq <- c(rep("CT", 4), rep("TC", 4))
+WI.diff <- c(WI.diff.CT, WI.diff.TC)
+WI.diff.data <- data.frame(cbind(seq, WI.diff = as.numeric(WI.diff)))
+WI.diff.data$WI.diff <- as.numeric(WI.diff.data$WI.diff)
+#test for normality
+shapiro.test(WI.diff.CT)
+#normal
+shapiro.test(WI.diff.TC)
+#normal
+
+#test for variance
+var.test(WI.diff ~ seq, data = WI.diff.data)
+#equal variance
+
+t.test(WI.diff.CT, WI.diff.TC, var.equal = T)
+#not significant, obvi
+
+
+#just gonna do bear indirect and direct now#
+BI.diff.CT <- c(0.05,
+                -0.041666667,
+                -0.26984127,
+                -0.514285714)
+BI.diff.TC <- c(-0.142857143,
+                0.458333333,
+                -0.053571429,
+                -0.416666667)
+seq <- c(rep("CT", 4), rep("TC", 4))
+BI.diff <- c(BI.diff.CT, BI.diff.TC)
+BI.diff.data <- data.frame(cbind(seq, BI.diff = as.numeric(BI.diff)))
+BI.diff.data$BI.diff <- as.numeric(BI.diff.data$BI.diff)
+shapiro.test(BI.diff.CT)
+#normal
+shapiro.test(BI.diff.TC)
+#normal
+var.test(BI.diff ~ seq, data = BI.diff.data)
+t.test(BI.diff.CT, BI.diff.TC, var.equal = T)
+#not significant
+
+
+#Do the MANCOVA with field risk as a covariate
+#so to do that we need to give each herd a risk number for each phase. which I guess ive already done
+W.B.data
+W.B.data$risk <- c(4.5,6.5,5,5,3,2,2,3,2,1,3,4,2,3,5,4)
+summary(manova(cbind(BA, WA, WI, BI)~herd.id+aperiod+seq+trta+risk+Error(herd.id), data= W.B.data))

@@ -1,0 +1,120 @@
+library(ggplot2)
+
+input = ("
+         Treatment.Control	value	.group	Phase
+PC 1.5225463  All_LC 1
+PC 0.6620902 All_LC 1
+PC  -0.9000876 All_LC 1
+PC -1.8154938 All_LC 1
+T  -2.3195682 All_LC 1
+T  1.1674050 All_LC 1
+T  1.6036801 All_LC 1
+T  -1.5048337 All_LC 1
+PC  1.0339262 All_LC 2
+PC  0.5888912 All_LC 2
+PC  -0.3728703 All_LC 2
+PC  -1.2204662 All_LC 2
+T  -1.5287626 All_LC 2
+T  2.3248963 All_LC 2
+T  0.6142531 All_LC 2
+T  0.1443937 All_LC 2
+PC -0.53659347 Wolf 1
+PC -1.43760313 Wolf 1
+PC  -1.43760313 Wolf 1
+PC  -1.43760313 Wolf 1
+T  -1.43760313 Wolf 1
+T -0.31134106 Wolf 1
+T 4.25178998  Wolf 1
+T  -0.31134106 Wolf 1
+PC 0.81492101  Wolf 2
+PC  0.81492101 Wolf 2
+PC  -0.15044648 Wolf 2
+PC -1.43760313 Wolf 2
+T -0.15044648 Wolf 2
+T 0.06407963 Wolf 2
+T 1.13671018 Wolf 2
+T 1.56576240 Wolf 2
+PC 2.35817895  Bear 1
+PC 1.80363896 Bear 1
+PC  -0.52592936 Bear 1
+PC  -1.40105772 Bear 1
+T  -2.11316396 Bear 1
+T 2.05171503 Bear 1
+T 1.22982660  Bear 1
+T  -1.81914817 Bear 1
+PC 0.07624565  Bear 2
+PC  0.23859708 Bear 2
+PC  -0.21125646 Bear 2
+PC -0.27909280 Bear 2
+T -1.92639119 Bear 2
+T 1.45008652 Bear 2
+T -0.14130305 Bear 2
+T -0.79094607 Bear 2
+PC -0.5884677  Cougar 1
+PC -0.5884677 Cougar 1
+PC  1.0778232 Cougar 1
+PC  -0.5884677 Cougar 1
+T  -0.5884677 Cougar 1
+T -0.5884677 Cougar 1
+T -0.5884677  Cougar 1
+T  -0.5884677 Cougar 1
+PC 3.1607243  Cougar 2
+PC  -0.5884677 Cougar 2
+PC  -0.5884677 Cougar 2
+PC -0.5884677 Cougar 2
+T -0.5884677 Cougar 2
+T 3.4115323 Cougar 2
+T -0.5884677  Cougar 2
+T -0.5884677 Cougar 2
+PC -0.6726891  Coyote 1
+PC 1.9996597 Coyote 1
+PC  -0.1089494 Coyote 1
+PC  0.2723326 Coyote 1
+T  -1.7497852 Coyote 1
+T -1.6803709 Coyote 1
+T -0.7435020  Coyote 1
+T  1.4678876 Coyote 1
+PC 0.6205656  Coyote 2
+PC  -0.9519362 Coyote 2
+PC  0.3981311 Coyote 2
+PC 1.1780582 Coyote 2
+T 1.8405351 Coyote 2
+T -0.2178734 Coyote 2
+T 0.6961083 Coyote 2
+T -2.3481719 Coyote 2
+         ")
+Data = read.table(textConnection(input), head = T)
+Data$Phase <- as.factor(Data$Phase)
+Data$value <- as.numeric(Data$value)
+Data$TC <- as.factor(Data$Treatment.Control)
+
+ggplot(Data, aes(x = Treatment.Control, y = value, color =.group))+
+  geom_boxplot() +
+  #scale_color_manual(values = c("#EA8210","#D80048","#9134FF", "#0CAEED"))+
+  facet_wrap(.group~Phase, ncol = 2)+
+  ylab("carnivore presence")+
+  xlab("Treatment")+
+  theme_bw() +
+  theme(axis.title   = element_text(size = 14),
+        axis.text    = element_text(size = 14,),
+        legend.title = element_blank(), 
+        legend.text = element_text(size = 14),
+        strip.text.x = element_text(size = 14))
+
+setwd("/Volumes/ADATA HD650/AlbertaProject/Mapping/PDF/")
+setEPS()
+postscript("Fig1_PLOSBIO.eps")
+ggplot(Data, aes(x = Treatment.Control, y = value, color =.group))+
+  geom_boxplot() +
+  #scale_color_manual(values = c("#EA8210","#D80048","#9134FF", "#0CAEED"))+
+  facet_wrap(.group~Phase, ncol = 2)+
+  ylab("carnivore presence")+
+  xlab("Treatment")+
+  theme_bw() +
+  theme(axis.title   = element_text(size = 14),
+        axis.text    = element_text(size = 14,),
+        legend.title = element_blank(), 
+        legend.text = element_text(size = 14),
+        strip.text.x = element_text(size = 14))
+
+dev.off()

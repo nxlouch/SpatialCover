@@ -1,0 +1,609 @@
+#####Percent cover of each LC type#####
+
+#This reads in the bridge which you have to do first
+library(arcgisbinding)
+arc.check_product()
+
+#Read in the necessary packages
+
+#Packages for Vector data
+install.packages("sp")
+install.packages("rgdal")
+install.packages("sf")
+library(sp)
+library(rgdal)
+library(sf)
+
+#Packages for Raster data
+install.packages("raster")
+library(raster)
+
+#Read in vector Layers (Buffer)
+Buffer <- arc.open("C:/Users/Naomi Louchouarn/Desktop/2018_effort/GISIntermediates/WolfLocs/Buff275m_Randoms_withIDandYear.shp")
+buffer_df <- arc.select(object = Buffer, fields = c("FID", "Shape", "CID", "BUFF_DIST", "ORIG_FID", "FID_1", "CID_1", "BUFF_DIS_1", "ORIG_FID_1", "ID_1", "Year")) #the arc.select tool can be used to subset and turn into a df for later use, or it can just be used to turn into a df. In order to create it as a subset
+buffer.df.sp <- arc.data2sp(buffer_df)#Have to convert everything to spatial points dataframes to be able to use it in R, in the end you have to convert back so that you can export into ArcGis
+
+###Final Versions####
+#Reclass.cov - checked
+reclass.cov <- function(rasterlayer = NULL, wd = NULL, RasterfolderName = NULL, onlyRast = F, zoneID_reclass = NULL, AdditCol_rast = NULL, csvfoldername = NULL, onlyCSV = F){
+  #Version 1.0 (July 6, 2018)
+  #Variables --
+  #rasterlayer: The original raster layer that will be reclassified according to cover types and zone polygon extent
+  #wd: the filepath name of the working directory where folders with reclassified LC rasters will be stored, this is an optional argument, and is only necessary when you choose to export your raster or csv files
+  #RasterfolderName: Optional, if used this is the name of the folder that will be placed within the wd in which raster layers will be exported and stored. 
+  #onlyRast: Optional, if used this will ensure that no csv files are saved. Default is F
+  #zoneID_reclass: The ID number of the extent used to clip the raster and of which we want information about percent cover. The zoneID is useful for further analysis if it is important to know which clip the LC percent cover belongs to 
+  #AdditCol: the additional attribute columns you want to include in the final df, simply specify the columns of interest by using df[, col#]
+  #csvfoldername: optional argument, if provided, will be used to export and save csv files
+  #onlyCSV: Optional, if used this will ensure that no raster files are saved. Default is F
+  #Processing Steps--
+  #Step 1: creates a list of matrices which will be be populated with the reclassify values 
+  #Step 2: For loop which populates the list of matrices according to the landcover types present. The number   of matrices is based on the number of LCs present, and the values are populated so that each matrix is the   guiding principles to reclassify one raster layer per LC type
+  #Step 3: Exports each reclassified LC specific raster to a new folder which is named according to the        buffer ID, so that each ID will have its own folder with a set of rasters for all LCs present
+  #Step 4: Reads in each of the buff specific LC specific rasters one at a time and calculates the percent     cover of each LC, then appends a dataframe with the information
+  #Final output will be a dataframe for the focal buffer which lists all LCs present and the percent cover of   each LC
+  #Step 1
+  list_value <- sort(getValues(rasterlayer), decreasing = F)
+  m <- matrix(as.numeric(c("", "", "", "", "", "", "", "", "")), ncol = 3, byrow = T)
+  l <- rep(list(m), times = length(as.numeric(levels(as.factor(list_value)))))
+  #Turns AdditCol into the correct dataframe format
+  AdditCol_rast_df <- as.data.frame(AdditCol_rast)
+  AdditColName <- colnames(as.data.frame(AdditCol_rast_df))#takes the names of the added columns for use in the df later
+  #Step 2
+  for(i in 1:length(l)){
+    l[[i]][1,] <- c( as.numeric(levels(as.factor(list_value)))[i], as.numeric(levels(as.factor(list_value)))[i]+1, 1)
+    
+    if (i<length(l)){
+      l[[i]][2,] <- c(as.numeric(levels(as.factor(list_value)))[i+1], rev(as.numeric(levels(as.factor(list_value))))[1], 0)
+    }
+    
+    else{
+      l[[i]][2,] <- c(as.numeric(levels(as.factor(list_value)))[i], as.numeric(levels(as.factor(list_value)))[i]+1, 0)
+      
+    }
+    l[[i]][3,] <-  c(0, as.numeric(levels(as.factor(list_value)))[i], 0)
+    
+  }#the for loop that goes through and populates the list of matrices  
+  l
+  #Step 3
+  list <- list()  
+  for (j in 1:length(l)){ 
+    lc_reclass <- reclassify(rasterlayer, l[[j]], include.lowest = T, right = F)
+    lc_reclass_filename <- paste("lcreclass", sep="_", as.numeric(levels(as.factor(list_value)))[j])#add yy in here when have it 
+    if (!is.null(wd)){
+      if(onlyCSV!=T){
+        if (!is.null(RasterfolderName)){
+          new_wd<- paste0(wd, sep = "/", RasterfolderName)
+          dir.create(new_wd)#creates new folder based on the buffer being run so that everything is split up by the buffer
+          setwd(new_wd)
+          writeRaster(lc_reclass, filename = lc_reclass_filename, format = "GTiff", overwrite = T)
+        }
+      }
+      
+    }
+    #for loop pulls in each newly created reclassed LC specific raster, and calculates the percentage cover of each data type, creating a df with the lc type, ID of the buffer being analyzed, and percentage cover
+    list[[j]] <- lc_reclass
+  }
+  df <- as.data.frame(rbind(rep(data.frame(NA), 3+length(AdditCol_rast_df))))
+  colnames(df) <- c("ID", AdditColName, "CoverType", "PercentageCover")
+  for (k in 1:length(list)){
+    raster <- list[[k]]
+    df[k,] <- c(zoneID_reclass, AdditCol_rast_df, as.numeric(levels(as.factor(list_value)))[k], ((ncell(raster[raster>0])/ncell(raster[!is.na(raster)]))*100))
+    
+  }
+  if (!is.null(wd)){
+    if(onlyRast != T){
+      if(!is.null(csvfoldername)){
+        df <- apply(df,2,as.character)
+        wdforcsv <- paste0(wd, sep = "/", csvfoldername)
+        dir.create(wdforcsv)
+        setwd(wdforcsv)
+        csvfilename <-  paste(csvfoldername, ".csv", sep = "")
+        write.csv(df, file = csvfilename)
+      }
+    }
+    
+  }
+  
+  
+  return(df)
+  
+}
+
+#Percent.cov - checked
+Percent.cov <- function (vectorlayer = NULL, rasterlayer = NULL, zoneID = NULL, AdditCol = NULL, rasterwd = NULL, conditdf = NULL, conditvalue = NULL, savingwd = NULL, onlyCSV = F, dfnamebase = NULL){
+  #Version 1.0 (July 7, 2018)
+  #Variables -- 
+  #vectorlayer: this is the ArcGIS shapefile or R compatible sp file with the zones that will be used to crop the rasters
+  #rasterlayer: this is the raster layer that will be cropped and whose values will be used to determine percentage cover in each zone. If only one raster layer is to be used, this variable is required. If more than one rasterlayer is to be used according to specified conditions, leave rasterlayer blank and provide rasterwd, conditdf and conditvalue
+  #zoneID: necessary variable to denote the name of the column in the vectorlayer that will be used to identify zones. This should be class character, only the name of the column eg. "colname"
+  #AdditCol: the column number(s) of any additional columns with data you wish to append to the final dataframe. This is an optional variable
+  #rasterwd: Where your raster layers that will act as clipping rasters will come from, this is ony necessary if no rasterlayer has been specified and more than one rasterlayer is to be used for clipping
+  #conditdf: this is a dataframe that will contain the conditions for choosing the rasterlayer to use as a clipping raster. Must have three rows. First row must be the names of the rasterlayers to be chosen from, second row must be the from column (ie. lower bound of condition), and third row must be the to column (ie. upper cound of condition). Values in from and to columns must be integers
+  #conditvalue: a list of values that will be compared to to and from columns of conditdf to determine which rasterlayer to choose as the clipping raster. This list will come from attributes in the vectorlayer which identify zones that require particular rasterlayers
+  #savingwd: file pathname where reclassified raster layers and csv files of percentage cover per zone will be saved. This is optional, if not present neither reclassified rasters, nor csv files will be saved
+  #onlyCSV: indicator of whether to only create and save csv files of percentage cover per zone. Default is F. If marked as T, savingwd must be specified
+  #dfnamebase: character string of base naming convention for saving files. Is required when savingwd is provided
+  #The final output will be a dataframe with all zoneIDs, Cover type (ie. the original raster cell values), Percentage cover (of each original raster cell value)
+  
+  dflist<-list()
+  if (is.null(vectorlayer)){
+    stop("vector layer input missing")
+  }
+  #turns vectorlayer into R compatible sp layer and identifies zoneID
+  if (class(vectorlayer) != "SpatialPolygonsDataFrame"){
+    stop("vector layer must be class SpatialPolygonsDataFrame ")
+  }else{
+    if(class(vectorlayer)== "SpatialPolygonsDataFrame"){
+      zoneID_cov <- vectorlayer[[zoneID]]
+    } 
+  }
+  
+  for (a in 1:length(vectorlayer)){
+    #Step 1: subset the appropriate zone according to ID 
+    buff <- subset(vectorlayer, zoneID_cov == a)
+    #identify the appropriate columns to include in the final dataframe
+    AdditCol_cov = buff[,AdditCol]
+    
+    #Step 2: Identify the raster layer that will be clipped and whose values will be used to calculate percent cover
+    if(!is.null(rasterlayer)){
+      clipRaster <- rasterlayer
+    } else{ 
+      if(!is.null(rasterwd)){
+        if(!is.null(conditdf)){
+          if(!is.null(conditvalue)){
+            setwd(rasterwd)
+            rastsubset <- conditdf[conditvalue[a]>= conditdf[, 2] & conditvalue[a]<=conditdf[,3],][1,1]
+            clipRaster <- raster(as.character(rastsubset))
+          }else{
+            stop("if no rasterlayer is provided, must provide conditvalue")
+          }
+        }else{
+          stop("if no rasterlayer is provided, must provide conditdf")
+        }
+        
+      }else{
+        stop("if no rasterlayer is provided, must provide rasterwd")
+      }
+    }
+    
+    #Step 3: crop the raster layer according to the zone polygon
+    buffcrop <- crop(clipRaster, extent(buff))
+    buffraster <- mask(buffcrop, buff)
+    
+    #Step 4: run through the reclass.cov function, which splits the cropped rasted into individual reclassified rasters according to cover types present (will split into   the same number of rasters as there are cover types) then calculates the percent cover of each cover type and combines values into one dataframe per zone polygon
+    if (!is.null(savingwd)){
+      if(is.null(dfnamebase)){
+        stop("dfnamebase must be provided when savingwd is provided")
+      }else {
+        if(onlyCSV == F){
+          wd <- savingwd
+          reclass <- reclass.cov(rasterlayer = buffraster, wd = wd, RasterfolderName = paste(dfnamebase, sep = "_", zoneID_cov[a]), zoneID_reclass = zoneID_cov[a], AdditCol_rast = AdditCol_cov, csvfoldername = paste(dfnamebase, sep = "-", zoneID_cov[a]))
+        }else{
+          if(onlyCSV == T){
+            wd <- savingwd
+            reclass <- reclass.cov(rasterlayer = buffraster, wd = wd, zoneID_reclass = zoneID_cov[a], AdditCol_rast = AdditCol_cov, csvfoldername = paste(dfnamebase, sep = "-", zoneID_cov[a]), onlyCSV = T)
+          }
+        }
+      }
+      
+    }
+    
+    else{ if(is.null(savingwd)){
+      if(onlyCSV == T){
+        stop("savingwd must be specified in order to save csv files")
+      }else{
+        reclass <- reclass.cov(rasterlayer = buffraster, zoneID_reclass = zoneID_cov[a], AdditCol_rast = AdditCol_cov)
+      }
+      
+    }
+    }
+    
+    #Step 5: Combines all zone polygon specific dataframes into a list of dataframes
+    assign(paste0(dfnamebase, zoneID_cov[a]), reclass)
+    dfname <- paste0(dfnamebase, zoneID_cov[a])
+    dfvalues <- get(paste0(dfnamebase, zoneID_cov[a]))
+    dflist[[dfname]] <-dfvalues
+    
+  }
+  #step 6: Combines the list of dataframes into a dataframe
+  finaldf_allzone <- do.call(rbind, dflist)
+  return(finaldf_allzone)
+} 
+
+
+
+
+
+#raster layers are brought in one at a time through the following forloop
+#This function runs through and splits the raster into one reclassified raster per landcover type, with that LC type being 1 and all others being 0 
+reclass.lc <- function(rasterlayer = NULL, wd = NULL, folderName = NULL, Buff_ID = NULL, AdditCol = NULL){
+#Variables --
+  #rasterlayer: The original raster layer that will be reclassified according to LCs types and buffer extent
+  #wd: the filepath name of the working directory where folders with reclassified LC rasters will be stored
+  #folderName: the name of the folder that will be placed within the wd in which layers will be stored
+  #Buff_ID: The ID number of the buffer used to clip the LC raster and of which we want information about      percent LC cover. The Buff_ID will be placed in the final DF to identify which buffer the LC percent cover   belongs to 
+  #Year: the year of the buffer being analyzed, value also to be placed in final DF 
+  #AdditCol: the additional attribute columns you want to include in the final df, should be in df format, with only the columns of interest
+#Processing Steps--
+  #Step 1: creates a list of matrices which will be be populated with the reclassify values 
+  #Step 2: For loop which populates the list of matrices according to the landcover types present. The number   of matrices is based on the number of LCs present, and the values are populated so that each matrix is the   guiding principles to reclassify one raster layer per LC type
+  #Step 3: Exports each reclassified LC specific raster to a new folder which is named according to the        buffer ID, so that each ID will have its own folder with a set of rasters for all LCs present
+  #Step 4: Reads in each of the buff specific LC specific rasters one at a time and calculates the percent     cover of each LC, then appends a dataframe with the information
+  #Final output will be a dataframe for the focal buffer which lists all LCs present and the percent cover of   each LC
+#Step 1
+  list_value <- sort(getValues(rasterlayer), decreasing = F)
+  m <- matrix(as.numeric(c("", "", "", "", "", "", "", "", "")), ncol = 3, byrow = T)
+  l <- rep(list(m), times = length(as.numeric(levels(as.factor(list_value)))))
+#Step 2
+  for(i in 1:length(l)){
+    l[[i]][1,] <- c( as.numeric(levels(as.factor(list_value)))[i], as.numeric(levels(as.factor(list_value)))[i]+1, 1)
+    
+    if (i<length(l)){
+      l[[i]][2,] <- c(as.numeric(levels(as.factor(list_value)))[i+1], rev(as.numeric(levels(as.factor(list_value))))[1], 0)
+    }
+    
+    else{
+      l[[i]][2,] <- c(as.numeric(levels(as.factor(list_value)))[i], as.numeric(levels(as.factor(list_value)))[i]+1, 0)
+      
+    }
+    l[[i]][3,] <-  c(0, as.numeric(levels(as.factor(list_value)))[i], 0)
+    
+  }#the for loop that goes through and populates the list of matrices  
+  l
+#Step 3
+  for (j in 1:length(l)){ 
+    lc_reclass <- reclassify(rasterlayer, l[[j]], include.lowest = T, right = F)
+    lc_reclass_filename <- paste("lcreclass", sep="_", as.numeric(levels(as.factor(list_value)))[j])#add yy in here when have it 
+    new_wd<- paste0(wd, sep = "/", folderName)
+    dir.create(new_wd)#creates new folder based on the buffer being run so that everything is split up by the buffer
+    setwd(new_wd)
+    writeRaster(lc_reclass, filename = lc_reclass_filename, format = "GTiff", overwrite = T)
+    lc_reclass[j]
+  }#the for loop that goes through and uses each matrix to reclassify according to each lc type
+#Step 4
+  myFiles <- list.files(all.files = F)
+  df <- data.frame("ID" = NA, "LC" = NA, "PercentageCover" = NA, colnames(AdditCol))
+  for (k in 1:length(myFiles)){
+    raster <- raster(myFiles[k])
+    df[k,] <- c(Buff_ID, AdditCol, as.numeric(levels(as.factor(list_value)))[k], ((ncell(raster[raster>0])/ncell(raster[!is.na(raster)]))*100))
+  }#for loop pulls in each newly created reclassed LC specific raster, and calculates the percentage cover of each data type, creating a df with the lc type, ID of the buffer being analyzed, and percentage cover
+  print(df)
+  folderforcsv <- paste0(wd, sep = "/", paste("Buffnumdf", df[1,1], sep = ""))
+  dir.create(folderforcsv)
+  write.csv(df, file =  paste(folderforcsv, sep = "/", paste("Buffnumdf", df[1,1], ".csv", sep = "")))
+  #assign(paste("Buffnum", Buff_ID, sep = ""), df)
+}
+
+
+#Final Reclass.lc
+
+rasterwd = "C:/Users/Naomi Louchouarn/Desktop/2018_effort/GISIntermediates/Landcover/LCDataforR" 
+vectorlayer = buffer 
+zoneID= "ID_1" 
+AdditCol= c(1:3) 
+savingwd = "C:/Users/Naomi Louchouarn/Desktop/2018_effort/GISIntermediates/Landcover/ReclassLC_test"
+dfnamebase = "BuffdfNum"
+zoneID_cov <- vectorlayer[[zoneID]]
+
+buff <- subset(vectorlayer, zoneID_cov == a)
+AdditCol_cov = buff[,AdditCol]
+buffcrop <- crop(clipRaster, extent(buff))
+buffraster <- mask(buffcrop, buff)
+wd <- savingwd
+a<- 2
+for (a in 1:length(zoneID_cov)){
+  reclass.lc(rasterlayer = buffraster, wd = savingwd, RasterfolderName = paste(dfnamebase, sep = "_", zoneID_cov[a]), Clip_ID = zoneID_cov[a], AdditCol_rast = AdditCol_cov, csvfoldername = paste(dfnamebase, sep = "-", zoneID_cov[a]))
+  dfFinal <- rbind(df)
+}
+
+#Final Version
+reclass.cov <- function(rasterlayer = NULL, wd = NULL, RasterfolderName = NULL, Clip_ID = NULL, AdditCol_rast = NULL, csvfoldername = NULL){
+  #Version 1.0 (July 6, 2018)
+  #Variables --
+  #rasterlayer: The original raster layer that will be reclassified according to LCs types and Clip extent
+  #wd: the filepath name of the working directory where folders with reclassified LC rasters will be stored, this is an optional argument, and is only necessary when you choose to export your raster or csv files
+  #RasterfolderName: Optional, if used this is the name of the folder that will be placed within the wd in which raster layers will be exported and stored. 
+  #Clip_ID: The ID number of the extent used to clip the LC raster and of which we want information about      percent LC cover. The Clip_ID is useful for further analysis if it is important to know which clip the LC percent cover belongs to 
+  #AdditCol: the additional attribute columns you want to include in the final df, simply specify the columns of interest by using df[, col#]
+  #csvfoldername: optional argument, if provided, will be used to export and save csv files
+  #Processing Steps--
+  #Step 1: creates a list of matrices which will be be populated with the reclassify values 
+  #Step 2: For loop which populates the list of matrices according to the landcover types present. The number   of matrices is based on the number of LCs present, and the values are populated so that each matrix is the   guiding principles to reclassify one raster layer per LC type
+  #Step 3: Exports each reclassified LC specific raster to a new folder which is named according to the        buffer ID, so that each ID will have its own folder with a set of rasters for all LCs present
+  #Step 4: Reads in each of the buff specific LC specific rasters one at a time and calculates the percent     cover of each LC, then appends a dataframe with the information
+  #Final output will be a dataframe for the focal buffer which lists all LCs present and the percent cover of   each LC
+  #Step 1
+  list_value <- sort(getValues(rasterlayer), decreasing = F)
+  m <- matrix(as.numeric(c("", "", "", "", "", "", "", "", "")), ncol = 3, byrow = T)
+  l <- rep(list(m), times = length(as.numeric(levels(as.factor(list_value)))))
+  #Turns AdditCol into the correct dataframe format
+  AdditCol_rast_df <- as.data.frame(AdditCol_rast)
+  AdditColName <- colnames(as.data.frame(AdditCol_rast_df))#takes the names of the added columns for use in the df later
+  #Step 2
+  for(i in 1:length(l)){
+    l[[i]][1,] <- c( as.numeric(levels(as.factor(list_value)))[i], as.numeric(levels(as.factor(list_value)))[i]+1, 1)
+    
+    if (i<length(l)){
+      l[[i]][2,] <- c(as.numeric(levels(as.factor(list_value)))[i+1], rev(as.numeric(levels(as.factor(list_value))))[1], 0)
+    }
+    
+    else{
+      l[[i]][2,] <- c(as.numeric(levels(as.factor(list_value)))[i], as.numeric(levels(as.factor(list_value)))[i]+1, 0)
+      
+    }
+    l[[i]][3,] <-  c(0, as.numeric(levels(as.factor(list_value)))[i], 0)
+    
+  }#the for loop that goes through and populates the list of matrices  
+  l
+  #Step 3
+  list <- list()  
+  for (j in 1:length(l)){ 
+    lc_reclass <- reclassify(rasterlayer, l[[j]], include.lowest = T, right = F)
+    lc_reclass_filename <- paste("lcreclass", sep="_", as.numeric(levels(as.factor(list_value)))[j])#add yy in here when have it 
+    if (!is.null(wd)){
+      if (!is.null(RasterfolderName)){
+        new_wd<- paste0(wd, sep = "/", RasterfolderName)
+        dir.create(new_wd)#creates new folder based on the buffer being run so that everything is split up by the buffer
+        setwd(new_wd)
+        writeRaster(lc_reclass, filename = lc_reclass_filename, format = "GTiff", overwrite = T)
+      }
+    }
+    #for loop pulls in each newly created reclassed LC specific raster, and calculates the percentage cover of each data type, creating a df with the lc type, ID of the buffer being analyzed, and percentage cover
+    list[[j]] <- lc_reclass
+  }
+  df <- as.data.frame(rbind(rep(data.frame(NA), 3+length(AdditCol_rast_df))))
+  colnames(df) <- c("ID", AdditColName, "CoverType", "PercentageCover")
+  for (k in 1:length(list)){
+    raster <- list[[k]]
+    df[k,] <- c(Clip_ID, AdditCol_rast_df, as.numeric(levels(as.factor(list_value)))[k], ((ncell(raster[raster>0])/ncell(raster[!is.na(raster)]))*100))
+   
+  }
+  if (!is.null(wd)){
+    if(!is.null(csvfoldername)){
+      df <- apply(df,2,as.character)
+      wdforcsv <- paste0(wd, sep = "/", csvfoldername)
+      dir.create(wdforcsv)
+      setwd(wdforcsv)
+      csvfilename <-  paste(csvfoldername, ".csv", sep = "")
+      write.csv(df, file = csvfilename)
+    }
+    
+    #lc_reclass_filename <- paste("lcreclass", sep="_", as.numeric(levels(as.factor(list_value)))[j])
+  }
+  
+  return(df)
+  
+  }
+
+
+
+ 
+
+
+#My personal conditFun
+conditFun <- function(conditCol = NULL, conditValMat = NULL){
+  if(conditCol >= as.numeric(conditValMat[1,1]) & conditCol <= as.numeric(conditValMat[1,2])){
+    conditRaster <- raster(conditValMat[1,3])
+  } else{
+    if(conditCol>= as.numeric(conditValMat[2,1]) & conditCol <= as.numeric(conditValMat[2,2])){
+      conditRaster <- raster(conditValMat[2,3])
+    } else{
+      if(conditCol>= as.numeric(conditValMat[3,1]) & conditCol <= as.numeric(conditValMat[3,2])){
+        conditRaster <- raster(conditValMat[3,3])
+      } else{
+        conditRaster <- raster(conditValMat[4,3])
+      }
+    }
+  }
+  return(conditRaster)
+}
+
+#Now use the above function within a forloop that will work to split the buffer by ID, clip the relevant raster which matches the relevant buffer's year, and then use the clipped raster in the above function (reclass.lc). The forloop then outputs a list of DFs which will later be combined into one, very long df
+dflist<-list()
+dir.create("C:/Users/Naomi Louchouarn/Desktop/2018_effort/GISIntermediates/Landcover/ReclassLCBuffFiles")#creates the directory where the reclassed buffer files will live
+for (a in 1:length(buffer.df.sp)){
+  #Step 1: subset the buffer according to ID {
+  setwd("C:/Users/Naomi Louchouarn/Desktop/2018_effort/GISIntermediates/Landcover/LCDataforR")
+  buff <- subset(buffer.df.sp, ID_1 == a)
+  #Step 2: choose the relevant raster layer according to the year of the buffer that was chosen in step 1
+  if (buff$Year>=1970 & buff$Year<=1997){
+    clipRaster <- raster("lcreclass92")
+  } else {
+    if(buff$Year>=1998 & buff$Year<=2005){
+      clipRaster <- raster("lcreclass01")
+    } else {
+      if(buff$Year>=2006 & buff$Year<=2010){
+        clipRaster <- raster("lcreclass06")
+      } else{
+        clipRaster <- raster("lcreclass11")
+      }
+    }
+  }
+  
+  #Step 3: crop the relevant raster according to the chosen buffer extent
+  buffcrop <- crop(clipRaster, extent(buff))
+  buffraster <- mask(buffcrop, buff)
+  #Step 4: interate through the reclass.lc function for the chosen buffer
+  wd <- "C:/Users/Naomi Louchouarn/Desktop/2018_effort/GISIntermediates/Landcover/ReclassLCBuffFiles"
+  reclass.lc(rasterlayer = buffraster, wd = wd, folderName = paste("RandomBuffLCRasters", sep = "_", buff$ID_1), Buff_ID = buff$ID_1, Year = buff$Year)
+  #Step 5: append to the list of dfs
+  new.wd <- paste0(wd, sep = "/", paste("Buffnumdf", buff$ID_1, sep = ""))
+  assign(paste0("Buffnumdf", buff$ID_1), read.csv(file = paste(new.wd, paste("Buffnumdf", buff$ID_1, ".csv", sep = ""), sep = "/")))
+  dfname <- paste0("Buffnumdf", buff$ID_1)
+  dfvalues <- get(paste0("Buffnumdf", buff$ID_1))
+  dflist[[dfname]] <-dfvalues
+  #Step 6: combine the df list into one df and then view it
+  finaldf_allbuff <- do.call(rbind, dflist)
+  View(finaldf_allbuff)
+}
+
+#Final percent.cov function!!
+Percent.cov <- function (vectorlayer = NULL, rasterlayer = NULL, zoneID = NULL, AdditCol = NULL, rasterwd = NULL, conditdf = NULL, conditvalue = NULL, savingwd = NULL, onlyCSV = F, dfnamebase = NULL){
+#Version 1.0 (July 7, 2018)
+#Variables -- 
+  #vectorlayer: this is the ArcGIS shapefile or R compatible sp file with the zones that will be used to crop the rasters
+  #rasterlayer: this is the raster layer that will be cropped and whose values will be used to determine percentage cover in each zone. If only one raster layer is to be used, this variable is required. If more than one rasterlayer is to be used according to specified conditions, leave rasterlayer blank and provide rasterwd, conditdf and conditvalue
+  #zoneID: necessary variable to denote the name of the column in the vectorlayer that will be used to identify zones. This should be class character, only the name of the column eg. "colname"
+  #AdditCol: the column number(s) of any additional columns with data you wish to append to the final dataframe. This is an optional variable
+  #rasterwd: Where your raster layers that will act as clipping rasters will come from, this is ony necessary if no rasterlayer has been specified and more than one rasterlayer is to be used for clipping
+  #conditdf: this is a dataframe that will contain the conditions for choosing the rasterlayer to use as a clipping raster. Must have three rows. First row must be the names of the rasterlayers to be chosen from, second row must be the from column (ie. lower bound of condition), and third row must be the to column (ie. upper cound of condition). Values in from and to columns must be integers
+  #conditvalue: a list of values that will be compared to to and from columns of conditdf to determine which rasterlayer to choose as the clipping raster. This list will come from attributes in the vectorlayer which identify zones that require particular rasterlayers
+  #savingwd: file pathname where reclassified raster layers and csv files of percentage cover per zone will be saved. This is optional, if not present neither reclassified rasters, nor csv files will be saved
+  #onlyCSV: indicator of whether to only create and save csv files of percentage cover per zone. Default is F. If marked as T, savingwd must be specified
+  #dfnamebase: character string of base naming convention for saving files. Is required when savingwd is provided
+  #The final output will be a dataframe with all zoneIDs, Cover type (ie. the original raster cell values), Percentage cover (of each original raster cell value)
+  
+  dflist<-list()
+  if (is.null(vectorlayer)){
+    stop("vector layer input missing")
+  }
+  #turns vectorlayer into R compatible sp layer and identifies zoneID
+  if (class(vectorlayer) == "arc.feature_impl"){
+    selectvector <- arc.select(vectorlayer)
+    vectorlayer <- arc.data2sp(selectvector)
+    zoneID_cov <- vectorlayer[[zoneID]]
+  }else{
+    if(class(vectorlayer)== "SpatialPolygonsDataFrame"){
+      zoneID_cov <- vectorlayer[[zoneID]]
+    } else{
+      if(class(vectorlayer) != "arc.feature_impl" & class(vectorlayer) != "SpatialPolygonsDataFrame"){
+        stop("vector layer must be class SpatialPolygonsDataFrame or arc.feature.impl")
+      }
+    }
+  }
+  
+  
+  for (a in 1:length(vectorlayer)){
+    #Step 1: subset the appropriate zone according to ID 
+    buff <- subset(vectorlayer, zoneID_cov == a)
+    #identify the appropriate columns to include in the final dataframe
+    AdditCol_cov = buff[,AdditCol]
+    
+    #Step 2: Identify the raster layer that will be clipped and whose values will be used to calculate percent cover
+    if(!is.null(rasterlayer)){
+      clipRaster <- rasterlayer
+    } 
+    else{ 
+      if(!is.null(rasterwd)){
+        if(!is.null(conditdf)){
+          if(!is.null(conditvalue)){
+            setwd(rasterwd)
+            rastsubset <- conditdf[conditvalues[a]>= conditdf[, 2] & conditvalues[a]<=conditdf[,3],][1,1]
+            clipRaster <- raster(as.character(rastsubset))
+          }else{
+            stop("if no rasterlayer is provided, must provide conditvalue")
+          }
+        }else{
+          stop("if no rasterlayer is provided, must provide conditdf")
+        }
+        
+      }else{
+        stop("if no rasterlayer is provided, must provide rasterwd")
+      }
+    }
+    
+    #Step 3: crop the raster layer according to the zone polygon
+    buffcrop <- crop(clipRaster, extent(buff))
+    buffraster <- mask(buffcrop, buff)
+    
+    #Step 4: run through the reclass.cov function, which splits the cropped rasted into individual reclassified rasters according to cover types present (will split into   the same number of rasters as there are cover types) then calculates the percent cover of each cover type and combines values into one dataframe per zone polygon
+    if (!is.null(savingwd)){
+      if(is.null(dfbasename)){
+        stop("dfbasename must be provided when savingwd is provided")
+      }else {
+        if(onlyCSV == F){
+          wd <- savingwd
+          reclass <- reclass.cov(rasterlayer = buffraster, wd = wd, RasterfolderName = paste(dfnamebase, sep = "_", zoneID_cov[a]), Clip_ID = zoneID_cov[a], AdditCol_rast = AdditCol_cov, csvfoldername = paste(dfnamebase, sep = "-", zoneID_cov[a]))
+        }else{
+          if(onlyCSV == T){
+            wd <- savingwd
+            reclass <- reclass.cov(rasterlayer = buffraster, wd = wd, Clip_ID = zoneID_cov[a], AdditCol_rast = AdditCol_cov, csvfoldername = paste(dfnamebase, sep = "-", zoneID_cov[a]))
+          }
+          
+        }
+      }
+      
+    }
+    
+    else{ if(is.null(savingwd)){
+      if(onlyCSV == T){
+        stop("savingwd must be specified in order to save csv files")
+      }else{
+        reclass <- reclass.cov(rasterlayer = buffraster, Clip_ID = zoneID_cov[a], AdditCol_rast = AdditCol_cov)
+      }
+      
+    }
+    }
+    
+    #Step 5: Combines all zone polygon specific dataframes into a list of dataframes
+    assign(paste0(dfnamebase, zoneID_cov[a]), reclass)
+    dfname <- paste0(dfnamebase, zoneID_cov[a])
+    dfvalues <- get(paste0(dfnamebase, zoneID_cov[a]))
+    dflist[[dfname]] <-dfvalues
+    
+  }
+  #step 6: Combines the list of dataframes into a dataframe
+  finaldf_allzone <- do.call(rbind, dflist)
+  return(finaldf_allzone)
+}  
+
+Percent.cov <- function (rasterwd = NULL, vectorlayer = NULL, zoneID = NULL, AdditCol = NULL, zoneCondit  = FALSE, zoneConditFUN = NULL, rasterlayer = NULL, savingwd = NULL, dfnamebase = NULL){
+  #rasterwd <- where raster layers will come from
+  #buffer.df.sp - this is the shapefile with the zones that will be used to crop the rasters
+  #Necessary additional variable will have to be zones, which will be the column name of the zone IDs
+  #then an if statement which will represent the part of the function which allows you to create a condition in which certain raster layers are chosen based on vector zone ID's. This is important if you want information about percent cover using raster layers that changes based on your zone ID's this can be called zoneCondit with the result being T or F. and a conditional statement worked in with if (is.null(zoneCondit)|zoneCondit = F) {clipRaster <- rasterlayer(included in Funct)} else if (zoneCondit = T){Conditional statement} 
+  #This condition will have to be made more generic
+  #savingwd <- apathname for where to send new zoned buffer files
+  #add statement in reclass.lc that makes Year more generic and allows the use of either nothing there, or something else there
+  #dfnamebase <- basis for naming new df csvs to which zone ID numbers will be appended
+  #final output will be called percentcov_allzone 
+  for (a in 1:length(vectorlayer)){
+    #Step 1: subset the buffer according to ID {
+    setwd(rasterwd)
+    buff <- subset(vectorlayer, zoneID == a)
+  
+    if(!is.null(rasterlayer)){
+      clipRaster <- rasterlayer
+    } 
+
+    else if(zoneCondit = T){
+      clipRaster <- zoneConditFUN
+    }
+    
+    buffcrop <- crop(clipRaster, extent(buff))
+    buffraster <- mask(buffcrop, buff)
+    wd <- savingwd
+    reclass.lc(rasterlayer = buffraster, wd = wd, folderName = paste(dfnamebase, sep = "_", paste(buff, zoneID, sep = "$")), Buff_ID = paste(buff, zoneID, sep = "$"), Year = paste(buff, AdditCol, sep = "$"))
+    new.wd <- paste0(wd, sep = "/", paste(dfnamebase, buff$ID_1, sep = ""))
+    assign(paste0(dfnamebase, paste(buff, zoneID, sep = "$")), read.csv(file = paste(new.wd, paste(dfnamebase, paste(buff, zoneID, sep = "$"), ".csv", sep = ""), sep = "/")))
+    dfname <- paste0(dfnamebase, paste(buff, zoneID, sep = "$"))
+    dfvalues <- get(paste0(dfnamebase, paste(buff, zoneID, sep = "$")))
+    dflist[[dfname]] <-dfvalues
+    finaldf_allbuff <- do.call(rbind, dflist)
+  }
+  View(finaldf_allbuff)
+}  
+
+conditFun <- function(conditCol = NULL, conditValMat = NULL, listRasters = NULL, wd = NULL){
+  setwd(wd)
+  myFiles <- list.files(all.files = F)
+  if(conditCol >= conditValMat[1,1] & conditCol <= conditValMat[1,2]){
+    conditRaster <- raster(conditValMat[1,3])
+  } else{
+    if(conditCol>= conditValMat[2,1] & conditCol <= conditValMat[2,2]){
+      conditRaster <- raster(conditValMat[2,3])
+    } else{
+      if(conditCol>= conditValMat[3,1] & conditCol <= conditValMat[3,2]){
+        conditRaster <- raster(conditValMat[3,3])
+      } else{
+        conditRaster <- raster(conditValMat[4,3])
+      }
+  }
+  }
+  return(conditRaster)
+}
+
+
+
+

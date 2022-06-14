@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1531094756148.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "1|200|99|0|\n21|56|23|2|\n24|56|26|4|\n36|30|38|4|\n69|14|74|8|\n70|27|73|10|\n79|9|87|4|\n80|23|82|6|\n82|12|84|6|\n",
+    "hash" : "3298269913",
+    "id" : "9FD97976",
+    "lastKnownWriteTime" : 1531082437,
+    "last_content_update" : -2147483648,
+    "path" : "~/SpatialCover/R/Percent_cov_func.R",
+    "project_path" : "R/Percent_cov_func.R",
+    "properties" : {
+        "cursorPosition" : "44,58",
+        "scrollLine" : "0"
+    },
+    "relative_order" : 13,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
